@@ -1,0 +1,26 @@
+{
+    "name": "windawake/laravel-reset-transaction",
+    "description": "distributed transaction for call remote api service",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "zhangzibin",
+            "email": "619146134@qq.com"
+        }
+    ],
+    "require": {
+        "php": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laravel\\ResetTransaction\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Laravel\\ResetTransaction\\ResetTransactionServiceProvider"
+            ]
+        }
+    }
+}
