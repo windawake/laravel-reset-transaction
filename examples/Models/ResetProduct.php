@@ -4,7 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class ResetProduct extends Model {
-    const CREATED_AT = null;
+    const CREATED_AT = 'created_at';
     const UPDATED_AT = null;
 
     protected $primaryKey = 'pid';
