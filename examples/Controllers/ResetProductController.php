@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ResetProduct;
+use App\Models\ResetProductModel;
 use Illuminate\Http\Request;
 
 class ResetProductController extends Controller
@@ -26,7 +26,7 @@ class ResetProductController extends Controller
     public function store(Request $request)
     {
         //
-        return ResetProduct::create($request->input());
+        return ResetProductModel::create($request->input());
     }
 
     /**
@@ -38,7 +38,7 @@ class ResetProductController extends Controller
     public function show($id)
     {
         //
-        $item = ResetProduct::find($id);
+        $item = ResetProductModel::find($id);
         return $item ?? [];
     }
 
@@ -52,7 +52,7 @@ class ResetProductController extends Controller
     public function update(Request $request, $id)
     {
         //
-        return ResetProduct::findOrFail($id)->update($request->input());
+        return ResetProductModel::findOrFail($id)->update($request->input());
     }
 
     /**

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ResetProduct extends Model
+class ResetProductModel extends Model
 {
     const CREATED_AT = null;
     const UPDATED_AT = null;
