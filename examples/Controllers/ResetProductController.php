@@ -38,7 +38,8 @@ class ResetProductController extends Controller
     public function show($id)
     {
         //
-        return ResetProduct::findOrFail($id);
+        $item = ResetProduct::find($id);
+        return $item ?? [];
     }
 
     /**

@@ -1,35 +1,36 @@
 <?php
 
 use Illuminate\Support\Facades\DB;
+use Laravel\ResetTransaction\Exception\ResetTransactionException;
 
-Route::prefix('api')->middleware(['api','distribute.transact'])->group(function(){
+Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function () {
     Route::resource('/resetProduct', \App\Http\Controllers\ResetProductController::class);
 });
 
 
 Route::prefix('api')->middleware('api')->group(function () {
-    Route::get('/resetTransaction/rollback', function () {
-        $transactId = request('transact_id');
-        $code = 1;
+    Route::post('/resetTransaction/rollback', function () {
+        $transactId = request()->header('transact_id');
         DB::transaction(function () use ($transactId) {
             DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
         });
 
-        return ['code' => $code, 'transactId' => $transactId];
+        return 'success';
     });
 
-    Route::get('/resetTransaction/commit', function () {
-        $transactId = request('transact_id');
-        $code = 1;
-        $list = DB::table('reset_transaction')->where('transact_id', $transactId)->get();
-        DB::transaction(function () use ($list, $transactId) {
-            foreach ($list as $item) {
-                DB::unprepared($item->sql);
-            }
+    Route::post('/resetTransaction/commit', function () {
+        $transactId = request()->header('transact_id');
+        $sqlArr = DB::table('reset_transaction')->where('transact_id', $transactId)->pluck('sql')->toArray();
+        if (count($sqlArr) == 0) {
+            throw new ResetTransactionException("transact_id not found");
+        }
 
+        $sql = implode(';', $sqlArr);
+        DB::transaction(function () use ($sql, $transactId) {
+            DB::unprepared($sql);
             DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
         });
 
-        return ['code' => $code, 'transact_id' => $transactId];
+        return 'success';
     });
 });

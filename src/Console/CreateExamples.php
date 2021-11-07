@@ -53,9 +53,8 @@ class CreateExamples extends Command
         Schema::create($transactTable, function (Blueprint $table) {
             $table->increments('id');
             $table->string('transact_id', 32);
-            $table->string('action', 10);
             $table->text('sql');
-            $table->date('created_at');
+            $table->dateTime('created_at')->useCurrent();
             $table->index('transact_id');
         });
 
@@ -63,20 +62,20 @@ class CreateExamples extends Command
         Schema::create($productTable, function (Blueprint $table) {
             $table->increments('pid');
             $table->integer('store_id')->default(0);
-            $table->string('product_name');
+            $table->string('product_name')->default('');
             $table->tinyInteger('status')->default(0);
-            $table->date('created_at');
+            $table->dateTime('created_at')->useCurrent();
         });
 
 
-        $boolean = $this->files->copyDirectory(__DIR__.'/../../examples/Controllers', app_path('Http/Controllers'));
+        $boolean = $this->files->copyDirectory(__DIR__ . '/../../examples/Controllers', app_path('Http/Controllers'));
 
-        $boolean = $this->files->copyDirectory(__DIR__.'/../../examples/Models', app_path('Models'));
+        $boolean = $this->files->copyDirectory(__DIR__ . '/../../examples/Models', app_path('Models'));
 
-        if(!$boolean) {
-            $this->error('Failed to create Example models!');
+        if (!$boolean) {
+            $this->error('Failed to create Example!');
         }
 
-        $this->info('Example models created successfully!');
+        $this->info('Example created successfully!');
     }
 }

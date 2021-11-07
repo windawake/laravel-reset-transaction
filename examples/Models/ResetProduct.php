@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ResetProduct extends Model {
-    const CREATED_AT = 'created_at';
+class ResetProduct extends Model
+{
+    const CREATED_AT = null;
     const UPDATED_AT = null;
 
     protected $primaryKey = 'pid';
@@ -16,5 +18,4 @@ class ResetProduct extends Model {
         'product_name',
         'status',
     ];
-    
 }

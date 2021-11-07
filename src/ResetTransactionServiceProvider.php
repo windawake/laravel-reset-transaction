@@ -43,13 +43,13 @@ class ResetTransactionServiceProvider extends ServiceProvider
         );
 
         Event::listen(QueryExecuted::class, function ($event) {
-            $stopQueryLog = request('stop_queryLog');
-            $transactId = request('transact_id');
-            if (!$stopQueryLog && $event->sql && $transactId) {
+            $transactId = session('transact_id');
+            if ($transactId && $event->sql && !strpos($event->sql, 'reset_transaction')) {
                 $action = strtolower(substr(trim($event->sql), 0, 6));
                 $sql = str_replace("?", "'%s'", $event->sql);
                 $completeSql = vsprintf($sql, $event->bindings);
-                if (in_array($action, ['insert', 'update', 'delete']) && !strpos($event->sql, 'reset_transaction')) {
+
+                if (in_array($action, ['insert', 'update', 'delete'])) {
                     $backupSql = $completeSql;
                     if ($action == 'insert') {
                         $lastId = $event->connection->getPdo()->lastInsertId();
@@ -71,10 +71,10 @@ class ResetTransactionServiceProvider extends ServiceProvider
                         };
                     }
 
-                    $arr = request('transact_sql', []);
+                    $arr = session('transact_sql', []);
                     $arr[] = $backupSql;
 
-                    request()->merge(['transact_sql' => $arr]);
+                    session(['transact_sql' => $arr]);
                 }
 
                 Log::info($completeSql);
