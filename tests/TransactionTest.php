@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
+use App\Models\ResetProductModel;
+use GuzzleHttp\Client;
 
 class TransactionTest extends TestCase
 {
@@ -106,6 +108,146 @@ class TransactionTest extends TestCase
             $this->assertEquals($count, 0);
         }
     }
+
+    public function testForeachDeadlock1()
+    {
+        $this->initDeadlock();
+        try {
+            $this->createBench(10, function($i){
+                if($i%2){
+                    $this->createDeadlock2();
+                } else {
+                    $this->createDeadlock1();
+                }
+            });
+            $this->assertNull(null);
+        } catch(\Exception $ex){
+            $this->assertNull(1, $ex->getMessage());
+        }
+        
+    }
+
+    public function testForeachDeadlock2()
+    {
+        $this->initDeadlock();
+        try {
+            $this->createBench(10, function($i){
+                if($i%2){
+                    $this->createDeadlock4();
+                } else {
+                    $this->createDeadlock3();
+                }
+            });
+            $this->assertNull(null);
+        } catch(\Exception $ex){
+            $this->assertNull(1, $ex->getMessage());
+        }
+    }
+
+    private function initDeadlock()
+    {
+        ResetProductModel::updateOrCreate(['pid' => 1], ['product_name' => rand(100, 999)]);
+        ResetProductModel::updateOrCreate(['pid' => 2], ['product_name' => rand(100, 999)]);
+    }
+
+    private function createDeadlock1()
+    {
+        $transactId = $this->beginDistributedTransaction();
+        $header = [
+            'transact_id' => $transactId,
+        ];
+
+        $client = new Client([
+            'base_uri' => 'http://127.0.0.1:8000',
+            'timeout' => 60,
+            'headers' => $header,
+        ]);
+        $client->request('put', 'api/resetProduct/1', [
+            'json' => ['product_name' => rand(100, 999)]
+        ]);
+
+        $client->request('put', 'api/resetProduct/2', [
+            'json' => ['product_name' => rand(100, 999)]
+        ]);
+
+        $client->request('put', 'api/resetProduct/1', [
+            'json' => ['product_name' => rand(100, 999)]
+        ]);
+
+        $this->commitDistributedTransaction($transactId);
+
+    }
+
+    private function createDeadlock2()
+    {
+        $transactId = $this->beginDistributedTransaction();
+        $header = [
+            'transact_id' => $transactId,
+        ];
+
+        $client = new Client([
+            'base_uri' => 'http://127.0.0.1:8000',
+            'timeout' => 60,
+            'headers' => $header,
+        ]);
+        $client->request('put', 'api/resetProduct/2', [
+            'json' => ['product_name' => rand(100, 999)]
+        ]);
+
+        $client->request('put', 'api/resetProduct/1', [
+            'json' => ['product_name' => rand(100, 999)]
+        ]);
+
+        $this->commitDistributedTransaction($transactId);
+    }
+
+    private function createDeadlock3()
+    {
+        DB::beginTransaction();
+
+        ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
+        ResetProductModel::where('pid', 2)->update(['product_name' => rand(100, 999)]);
+        ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
+
+        DB::commit();
+    }
+
+    private function createDeadlock4()
+    {
+        DB::beginTransaction();
+
+        ResetProductModel::where('pid', 2)->update(['product_name' => rand(100, 999)]);
+        ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
+        
+        DB::commit();
+    }
+
+    private function createBench($count, $callback)
+    {
+        // 进程数量
+        $pids = [];
+        for ($i = 0; $i < $count; ++$i)
+        {
+            $pid = pcntl_fork();
+            if ($pid < 0) {
+                // 主进程
+                throw new \Exception('创建子进程失败: ' . $i);
+            } else if ($pid > 0) {
+                // 主进程
+                $pids[] = $pid;
+            } else {
+            // 子进程
+            try {
+                $callback($i);
+            } catch(\Exception $ex) {
+                throw $ex;
+            }
+            // 退出子进程
+            exit;
+            }
+        }
+    }
+
 
     private function beginDistributedTransaction()
     {

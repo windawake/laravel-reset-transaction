@@ -18,13 +18,13 @@ class DistributeTransact
     {
         $transactId = request()->header('transact_id');
         if ($transactId) {
-            session(['transact_id' => $transactId]);
             $sqlArr = DB::table('reset_transaction')->where('transact_id', $transactId)->pluck('sql')->toArray();
             $sql = implode(';', $sqlArr);
             DB::beginTransaction();
             if ($sqlArr) {
                 DB::unprepared($sql);
             }
+            session(['transact_id' => $transactId]);
         }
 
         $response = $next($request);
