@@ -24,15 +24,13 @@ Route::prefix('api')->middleware('api')->group(function () {
         if ($pos > 0) return 'success';
 
         $sqlArr = DB::table('reset_transaction')->where('transact_id', 'like', $transactId.'%')->pluck('sql')->toArray();
-        if (count($sqlArr) == 0) {
-            throw new ResetTransactionException("transact_id not found");
+        if (count($sqlArr) > 0) {
+            $sql = implode(';', $sqlArr);
+            DB::transaction(function () use ($sql, $transactId) {
+                DB::unprepared($sql);
+                DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
+            });
         }
-
-        $sql = implode(';', $sqlArr);
-        DB::transaction(function () use ($sql, $transactId) {
-            DB::unprepared($sql);
-            DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
-        });
 
         return 'success';
     });

@@ -66,5 +66,8 @@ class ResetProductController extends Controller
     public function destroy($id)
     {
         //
+        $item = ResetProductModel::findOrFail($id);
+        $ret = $item->delete();
+        return ['result' => $ret];
     }
 }

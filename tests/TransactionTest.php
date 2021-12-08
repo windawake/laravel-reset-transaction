@@ -126,7 +126,7 @@ class TransactionTest extends TestCase
         $this->assertEquals($product, []);
     }
 
-
+    
     public function testCommitTransact()
     {
         $item = DB::table('reset_transaction')->first();
@@ -137,6 +137,26 @@ class TransactionTest extends TestCase
 
             $this->assertEquals($count, 0);
         }
+    }
+
+    public function testUpdateWithCommit()
+    {
+        $data = [
+            'product_name' => 'aaa',
+        ];
+
+        $transactId = $this->beginDistributedTransaction();
+        $header = [
+            'transact_id' => $transactId,
+        ];
+
+        $response = $this->client->put('/api/resetProduct/1', [
+            'json' => $data,
+            'headers' => $header
+        ]);
+        $product = $this->responseToArray($response);
+
+        $this->commitDistributedTransaction($transactId);
     }
 
     // public function testForeachDeadlock1()
