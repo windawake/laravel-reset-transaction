@@ -6,6 +6,7 @@ use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 use App\Models\ResetProductModel;
 use GuzzleHttp\Client;
+use Illuminate\Support\Arr;
 
 class TransactionTest extends TestCase
 {
@@ -17,6 +18,8 @@ class TransactionTest extends TestCase
      * @var \GuzzleHttp\Client
      */
     private $client;
+
+    private $rollbackTransact = [];
 
     protected function setUp() : void
     {
@@ -126,7 +129,6 @@ class TransactionTest extends TestCase
         $this->assertEquals($product, []);
     }
 
-    
     public function testCommitTransact()
     {
         $item = DB::table('reset_transaction')->first();
@@ -304,6 +306,7 @@ class TransactionTest extends TestCase
         //         DB::commit();
         //     DB::rollBack();
         // DB::commit();
+        $this->rollbackTransact = [];
 
         $txId = $this->beginDistributedTransaction();
         $this->client->put('api/resetProduct/1', [
@@ -329,6 +332,7 @@ class TransactionTest extends TestCase
             $this->rollbackDistributedTransaction($txId2);
 
         $this->commitDistributedTransaction($txId);
+        $this->rollbackTransact = [];
     }
 
 
@@ -339,14 +343,29 @@ class TransactionTest extends TestCase
 
     private function commitDistributedTransaction($transactId)
     {
+        $txIdArr = explode('-', $transactId);
+        if (count($txIdArr) > 1) {
+            return true;
+        }
+
         $response = $this->client->post('/api/resetTransaction/commit', [
-            'headers' => ['transact_id' => $transactId]
+            'headers' => [
+                'transact_id' => $transactId,
+                'rollback_transact' => $this->rollbackTransact ? json_encode($this->rollbackTransact) : '',
+            ]
         ]);
         return $response->getStatusCode();
     }
 
     private function rollbackDistributedTransaction($transactId)
     {
+        $txIdArr = explode('-', $transactId);
+        if (count($txIdArr) > 1) {
+            $transactId = str_replace('-','.', $transactId);
+            Arr::set($this->rollbackTransact, $transactId, 1);
+            return true;
+        }
+
         $response = $this->client->post('/api/resetTransaction/rollback', [
             'headers' => ['transact_id' => $transactId]
         ]);
