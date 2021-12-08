@@ -52,7 +52,9 @@ class ResetProductController extends Controller
     public function update(Request $request, $id)
     {
         //
-        return ResetProductModel::findOrFail($id)->update($request->input());
+        $item = ResetProductModel::findOrFail($id);
+        $ret = $item->update($request->input());
+        return ['result' => $ret];
     }
 
     /**

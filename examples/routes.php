@@ -12,7 +12,7 @@ Route::prefix('api')->middleware('api')->group(function () {
     Route::post('/resetTransaction/rollback', function () {
         $transactId = request()->header('transact_id');
         DB::transaction(function () use ($transactId) {
-            DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
+            DB::table('reset_transaction')->where('transact_id', 'like', $transactId.'%')->delete();
         });
 
         return 'success';
@@ -20,7 +20,10 @@ Route::prefix('api')->middleware('api')->group(function () {
 
     Route::post('/resetTransaction/commit', function () {
         $transactId = request()->header('transact_id');
-        $sqlArr = DB::table('reset_transaction')->where('transact_id', $transactId)->pluck('sql')->toArray();
+        $pos = strpos($transactId, '-');
+        if ($pos > 0) return 'success';
+
+        $sqlArr = DB::table('reset_transaction')->where('transact_id', 'like', $transactId.'%')->pluck('sql')->toArray();
         if (count($sqlArr) == 0) {
             throw new ResetTransactionException("transact_id not found");
         }

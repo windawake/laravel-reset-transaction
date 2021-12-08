@@ -52,7 +52,7 @@ class CreateExamples extends Command
         Schema::dropIfExists($transactTable);
         Schema::create($transactTable, function (Blueprint $table) {
             $table->increments('id');
-            $table->string('transact_id', 32);
+            $table->string('transact_id', 512);
             $table->text('sql');
             $table->dateTime('created_at')->useCurrent();
             $table->index('transact_id');
