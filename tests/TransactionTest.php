@@ -19,9 +19,9 @@ class TransactionTest extends TestCase
      */
     private $client;
 
-    private $rollbackTransact = [];
+    private $transactRollback = [];
 
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->client = new Client([
@@ -46,7 +46,7 @@ class TransactionTest extends TestCase
 
         $response = $this->client->get('/api/resetProduct/' . $product['pid']);
         $product = $this->responseToArray($response);
-        
+
         $this->assertEquals($productName, $product['product_name']);
     }
 
@@ -60,13 +60,13 @@ class TransactionTest extends TestCase
         ];
 
         $transactId = $this->beginDistributedTransaction();
-        $header = [
+        $headers = [
             'transact_id' => $transactId,
         ];
 
         $response = $this->client->post('api/resetProduct', [
             'json' => $data,
-            'headers' => $header
+            'headers' => $headers
         ]);
         $this->responseToArray($response);
 
@@ -85,13 +85,13 @@ class TransactionTest extends TestCase
         ];
 
         $transactId = $this->beginDistributedTransaction();
-        $header = [
+        $headers = [
             'transact_id' => $transactId,
         ];
 
         $response = $this->client->post('/api/resetProduct', [
             'json' => $data,
-            'headers' => $header
+            'headers' => $headers
         ]);
         $product = $this->responseToArray($response);
 
@@ -112,13 +112,13 @@ class TransactionTest extends TestCase
         ];
 
         $transactId = $this->beginDistributedTransaction();
-        $header = [
+        $headers = [
             'transact_id' => $transactId,
         ];
 
         $response = $this->client->post('/api/resetProduct', [
             'json' => $data,
-            'headers' => $header
+            'headers' => $headers
         ]);
         $product = $this->responseToArray($response);
 
@@ -148,53 +148,53 @@ class TransactionTest extends TestCase
         ];
 
         $transactId = $this->beginDistributedTransaction();
-        $header = [
+        $headers = [
             'transact_id' => $transactId,
         ];
 
         $response = $this->client->put('/api/resetProduct/1', [
             'json' => $data,
-            'headers' => $header
+            'headers' => $headers
         ]);
         $product = $this->responseToArray($response);
 
         $this->commitDistributedTransaction($transactId);
     }
 
-    // public function testForeachDeadlock1()
-    // {
-    //     $this->initDeadlock();
-    //     try {
-    //         $this->createBench(10, function($i){
-    //             if($i%2){
-    //                 $this->createDeadlock2();
-    //             } else {
-    //                 $this->createDeadlock1();
-    //             }
-    //         });
-    //         $this->assertNull(null);
-    //     } catch(\Exception $ex){
-    //         $this->assertNull(1, $ex->getMessage());
-    //     }
-        
-    // }
+    public function testForeachDeadlock1()
+    {
+        $this->initDeadlock();
+        try {
+            $this->createBench(2, function($i){
+                if($i%2){
+                    $this->createDeadlock2();
+                } else {
+                    $this->createDeadlock1();
+                }
+            });
+            $this->assertNull(null);
+        } catch(\Exception $ex){
+            $this->assertNull(1, $ex->getMessage());
+        }
 
-    // public function testForeachDeadlock2()
-    // {
-    //     $this->initDeadlock();
-    //     try {
-    //         $this->createBench(10, function($i){
-    //             if($i%2){
-    //                 $this->createDeadlock4();
-    //             } else {
-    //                 $this->createDeadlock3();
-    //             }
-    //         });
-    //         $this->assertNull(null);
-    //     } catch(\Exception $ex){
-    //         $this->assertNull(1, $ex->getMessage());
-    //     }
-    // }
+    }
+
+    public function testForeachDeadlock2()
+    {
+        $this->initDeadlock();
+        try {
+            $this->createBench(2, function($i){
+                if($i%2){
+                    $this->createDeadlock4();
+                } else {
+                    $this->createDeadlock3();
+                }
+            });
+            $this->assertNull(null);
+        } catch(\Exception $ex){
+            $this->assertNull(1, $ex->getMessage());
+        }
+    }
 
     private function initDeadlock()
     {
@@ -205,44 +205,43 @@ class TransactionTest extends TestCase
     private function createDeadlock1()
     {
         $transactId = $this->beginDistributedTransaction();
-        $header = [
+        $headers = [
             'transact_id' => $transactId,
         ];
 
         $this->client->put('api/resetProduct/1', [
             'json' => ['product_name' => rand(100, 999)],
-            'headers' => $header,
+            'headers' => $headers,
         ]);
 
         $this->client->put('api/resetProduct/2', [
             'json' => ['product_name' => rand(100, 999)],
-            'headers' => $header,
+            'headers' => $headers,
         ]);
 
         $this->client->put('api/resetProduct/1', [
             'json' => ['product_name' => rand(100, 999)],
-            'headers' => $header,
+            'headers' => $headers,
         ]);
 
         $this->commitDistributedTransaction($transactId);
-
     }
 
     private function createDeadlock2()
     {
         $transactId = $this->beginDistributedTransaction();
-        $header = [
+        $headers = [
             'transact_id' => $transactId,
         ];
 
         $this->client->put('api/resetProduct/2', [
             'json' => ['product_name' => rand(100, 999)],
-            'headers' => $header,
+            'headers' => $headers,
         ]);
 
         $this->client->put('api/resetProduct/1', [
             'json' => ['product_name' => rand(100, 999)],
-            'headers' => $header,
+            'headers' => $headers,
         ]);
 
         $this->commitDistributedTransaction($transactId);
@@ -265,7 +264,7 @@ class TransactionTest extends TestCase
 
         ResetProductModel::where('pid', 2)->update(['product_name' => rand(100, 999)]);
         ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
-        
+
         DB::commit();
     }
 
@@ -273,8 +272,7 @@ class TransactionTest extends TestCase
     {
         // 进程数量
         $pids = [];
-        for ($i = 0; $i < $count; ++$i)
-        {
+        for ($i = 0; $i < $count; ++$i) {
             $pid = pcntl_fork();
             if ($pid < 0) {
                 // 主进程
@@ -283,14 +281,14 @@ class TransactionTest extends TestCase
                 // 主进程
                 $pids[] = $pid;
             } else {
-            // 子进程
-            try {
-                $callback($i);
-            } catch(\Exception $ex) {
-                throw $ex;
-            }
-            // 退出子进程
-            exit;
+                // 子进程
+                try {
+                    $callback($i);
+                } catch (\Exception $ex) {
+                    throw $ex;
+                }
+                // 退出子进程
+                exit;
             }
         }
     }
@@ -306,7 +304,6 @@ class TransactionTest extends TestCase
         //         DB::commit();
         //     DB::rollBack();
         // DB::commit();
-        $this->rollbackTransact = [];
 
         $txId = $this->beginDistributedTransaction();
         $this->client->put('api/resetProduct/1', [
@@ -332,7 +329,7 @@ class TransactionTest extends TestCase
             $this->rollbackDistributedTransaction($txId2);
 
         $this->commitDistributedTransaction($txId);
-        $this->rollbackTransact = [];
+        $this->transactRollback = [];
     }
 
 
@@ -351,7 +348,8 @@ class TransactionTest extends TestCase
         $response = $this->client->post('/api/resetTransaction/commit', [
             'headers' => [
                 'transact_id' => $transactId,
-                'rollback_transact' => $this->rollbackTransact ? json_encode($this->rollbackTransact) : '',
+                'transact_rollback' => $this->transactRollback ? json_encode($this->transactRollback) : '',
+                'transact_check' => 1,
             ]
         ]);
         return $response->getStatusCode();
@@ -361,8 +359,8 @@ class TransactionTest extends TestCase
     {
         $txIdArr = explode('-', $transactId);
         if (count($txIdArr) > 1) {
-            $transactId = str_replace('-','.', $transactId);
-            Arr::set($this->rollbackTransact, $transactId, 1);
+            $transactId = str_replace('-', '.', $transactId);
+            Arr::set($this->transactRollback, $transactId, 1);
             return true;
         }
 

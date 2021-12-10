@@ -54,6 +54,7 @@ class CreateExamples extends Command
             $table->increments('id');
             $table->string('transact_id', 512);
             $table->text('sql');
+            $table->integer('result')->default(0);
             $table->dateTime('created_at')->useCurrent();
             $table->index('transact_id');
         });

@@ -24,19 +24,25 @@ class DistributeTransact
             if ($sqlArr) {
                 DB::unprepared($sql);
             }
-            session(['transact_id' => $transactId]);
+
+            session()->put('transact_id', $transactId);
         }
 
         $response = $next($request);
 
         if ($transactId) {
             DB::rollBack();
-            $sqlArr = session('transact_sql', []);
-            foreach ($sqlArr as $sql) {
-                DB::table('reset_transaction')->insert([
-                    'transact_id' => $transactId,
-                    'sql' => value($sql),
-                ]);
+            session()->remove('transact_id');
+            $sqlArr = session()->remove('transact_sql');
+
+            if ($sqlArr) {
+                foreach ($sqlArr as $item) {
+                    DB::table('reset_transaction')->insert([
+                        'transact_id' => $transactId,
+                        'sql' => value($item['sql']),
+                        'result' => $item['result'],
+                    ]);
+                }
             }
         }
 
