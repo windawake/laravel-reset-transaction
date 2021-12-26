@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\DB;
 use Laravel\ResetTransaction\Exception\ResetTransactionException;
 
 Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function () {
-    Route::resource('/resetProduct', \App\Http\Controllers\ResetProductController::class);
+    Route::resource('/resetOrder', \App\Http\Controllers\ResetOrderController::class);
+    Route::resource('/resetStorage', \App\Http\Controllers\ResetStorageController::class);
+    Route::resource('/resetAccount', \App\Http\Controllers\ResetAccountController::class);
 });
 
 

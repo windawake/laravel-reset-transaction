@@ -1,10 +1,10 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Transaction;
 
 use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
-use App\Models\ResetProductModel;
+use App\Models\ResetOrderModel;
 use GuzzleHttp\Client;
 use Illuminate\Support\Arr;
 
@@ -33,30 +33,30 @@ class TransactionTest extends TestCase
     public function testCreateWithoutTransact()
     {
         $num = rand(1, 10000);
-        $productName = 'php ' . $num;
+        $orderName = 'php ' . $num;
         $data = [
             'store_id' => 1,
-            'product_name' => $productName,
+            'order_no' => $orderName,
         ];
 
-        $response = $this->client->post('api/resetProduct', [
+        $response = $this->client->post('api/ResetOrder', [
             'json' => $data
         ]);
-        $product = $this->responseToArray($response);
+        $order = $this->responseToArray($response);
 
-        $response = $this->client->get('/api/resetProduct/' . $product['pid']);
-        $product = $this->responseToArray($response);
+        $response = $this->client->get('/api/ResetOrder/' . $order['id']);
+        $order = $this->responseToArray($response);
 
-        $this->assertEquals($productName, $product['product_name']);
+        $this->assertEquals($orderName, $order['order_no']);
     }
 
     public function testCreateWithoutCommit()
     {
         $num = rand(1, 10000);
-        $productName = 'php ' . $num;
+        $orderName = 'php ' . $num;
         $data = [
             'store_id' => 1,
-            'product_name' => $productName,
+            'order_no' => $orderName,
         ];
 
         $transactId = $this->beginDistributedTransaction();
@@ -64,7 +64,7 @@ class TransactionTest extends TestCase
             'transact_id' => $transactId,
         ];
 
-        $response = $this->client->post('api/resetProduct', [
+        $response = $this->client->post('api/ResetOrder', [
             'json' => $data,
             'headers' => $headers
         ]);
@@ -78,10 +78,10 @@ class TransactionTest extends TestCase
     public function testCreateWithCommit()
     {
         $num = rand(1, 10000);
-        $productName = 'php ' . $num;
+        $orderName = 'php ' . $num;
         $data = [
             'store_id' => 1,
-            'product_name' => $productName,
+            'order_no' => $orderName,
         ];
 
         $transactId = $this->beginDistributedTransaction();
@@ -89,26 +89,26 @@ class TransactionTest extends TestCase
             'transact_id' => $transactId,
         ];
 
-        $response = $this->client->post('/api/resetProduct', [
+        $response = $this->client->post('/api/ResetOrder', [
             'json' => $data,
             'headers' => $headers
         ]);
-        $product = $this->responseToArray($response);
+        $order = $this->responseToArray($response);
 
         $this->commitDistributedTransaction($transactId);
 
-        $response = $this->client->get('/api/resetProduct/' . $product['pid']);
-        $product = $this->responseToArray($response);
-        $this->assertEquals($productName, $product['product_name']);
+        $response = $this->client->get('/api/ResetOrder/' . $order['id']);
+        $order = $this->responseToArray($response);
+        $this->assertEquals($orderName, $order['order_no']);
     }
 
     public function testCreateWithRollback()
     {
         $num = rand(1, 10000);
-        $productName = 'php ' . $num;
+        $orderName = 'php ' . $num;
         $data = [
             'store_id' => 1,
-            'product_name' => $productName,
+            'order_no' => $orderName,
         ];
 
         $transactId = $this->beginDistributedTransaction();
@@ -116,17 +116,17 @@ class TransactionTest extends TestCase
             'transact_id' => $transactId,
         ];
 
-        $response = $this->client->post('/api/resetProduct', [
+        $response = $this->client->post('/api/ResetOrder', [
             'json' => $data,
             'headers' => $headers
         ]);
-        $product = $this->responseToArray($response);
+        $order = $this->responseToArray($response);
 
         $this->rollbackDistributedTransaction($transactId);
 
-        $response = $this->client->get('/api/resetProduct/' . $product['pid']);
-        $product = $this->responseToArray($response);
-        $this->assertEquals($product, []);
+        $response = $this->client->get('/api/ResetOrder/' . $order['id']);
+        $order = $this->responseToArray($response);
+        $this->assertEquals($order, []);
     }
 
     public function testCommitTransact()
@@ -144,7 +144,7 @@ class TransactionTest extends TestCase
     public function testUpdateWithCommit()
     {
         $data = [
-            'product_name' => 'aaa',
+            'order_no' => 'aaa',
         ];
 
         $transactId = $this->beginDistributedTransaction();
@@ -152,11 +152,11 @@ class TransactionTest extends TestCase
             'transact_id' => $transactId,
         ];
 
-        $response = $this->client->put('/api/resetProduct/1', [
+        $response = $this->client->put('/api/ResetOrder/1', [
             'json' => $data,
             'headers' => $headers
         ]);
-        $product = $this->responseToArray($response);
+        $order = $this->responseToArray($response);
 
         $this->commitDistributedTransaction($transactId);
     }
@@ -198,8 +198,8 @@ class TransactionTest extends TestCase
 
     private function initDeadlock()
     {
-        ResetProductModel::updateOrCreate(['pid' => 1], ['product_name' => rand(100, 999)]);
-        ResetProductModel::updateOrCreate(['pid' => 2], ['product_name' => rand(100, 999)]);
+        ResetOrderModel::updateOrCreate(['id' => 1], ['order_no' => rand(100, 999)]);
+        ResetOrderModel::updateOrCreate(['id' => 2], ['order_no' => rand(100, 999)]);
     }
 
     private function createDeadlock1()
@@ -209,18 +209,18 @@ class TransactionTest extends TestCase
             'transact_id' => $transactId,
         ];
 
-        $this->client->put('api/resetProduct/1', [
-            'json' => ['product_name' => rand(100, 999)],
+        $this->client->put('api/ResetOrder/1', [
+            'json' => ['order_no' => rand(100, 999)],
             'headers' => $headers,
         ]);
 
-        $this->client->put('api/resetProduct/2', [
-            'json' => ['product_name' => rand(100, 999)],
+        $this->client->put('api/ResetOrder/2', [
+            'json' => ['order_no' => rand(100, 999)],
             'headers' => $headers,
         ]);
 
-        $this->client->put('api/resetProduct/1', [
-            'json' => ['product_name' => rand(100, 999)],
+        $this->client->put('api/ResetOrder/1', [
+            'json' => ['order_no' => rand(100, 999)],
             'headers' => $headers,
         ]);
 
@@ -234,13 +234,13 @@ class TransactionTest extends TestCase
             'transact_id' => $transactId,
         ];
 
-        $this->client->put('api/resetProduct/2', [
-            'json' => ['product_name' => rand(100, 999)],
+        $this->client->put('api/ResetOrder/2', [
+            'json' => ['order_no' => rand(100, 999)],
             'headers' => $headers,
         ]);
 
-        $this->client->put('api/resetProduct/1', [
-            'json' => ['product_name' => rand(100, 999)],
+        $this->client->put('api/ResetOrder/1', [
+            'json' => ['order_no' => rand(100, 999)],
             'headers' => $headers,
         ]);
 
@@ -251,9 +251,9 @@ class TransactionTest extends TestCase
     {
         DB::beginTransaction();
 
-        ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
-        ResetProductModel::where('pid', 2)->update(['product_name' => rand(100, 999)]);
-        ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
+        ResetOrderModel::where('id', 1)->update(['order_no' => rand(100, 999)]);
+        ResetOrderModel::where('id', 2)->update(['order_no' => rand(100, 999)]);
+        ResetOrderModel::where('id', 1)->update(['order_no' => rand(100, 999)]);
 
         DB::commit();
     }
@@ -262,8 +262,8 @@ class TransactionTest extends TestCase
     {
         DB::beginTransaction();
 
-        ResetProductModel::where('pid', 2)->update(['product_name' => rand(100, 999)]);
-        ResetProductModel::where('pid', 1)->update(['product_name' => rand(100, 999)]);
+        ResetOrderModel::where('id', 2)->update(['order_no' => rand(100, 999)]);
+        ResetOrderModel::where('id', 1)->update(['order_no' => rand(100, 999)]);
 
         DB::commit();
     }
@@ -271,15 +271,15 @@ class TransactionTest extends TestCase
     private function createBench($count, $callback)
     {
         // 进程数量
-        $pids = [];
+        $ids = [];
         for ($i = 0; $i < $count; ++$i) {
-            $pid = pcntl_fork();
-            if ($pid < 0) {
+            $id = pcntl_fork();
+            if ($id < 0) {
                 // 主进程
                 throw new \Exception('创建子进程失败: ' . $i);
-            } else if ($pid > 0) {
+            } else if ($id > 0) {
                 // 主进程
-                $pids[] = $pid;
+                $ids[] = $id;
             } else {
                 // 子进程
                 try {
@@ -296,32 +296,32 @@ class TransactionTest extends TestCase
     public function testNestedTransaction()
     {
         // DB::beginTransaction();
-        // ResetProductModel::where('pid', 1)->update(['product_name' => 'aaa']);
+        // ResetOrderModel::where('id', 1)->update(['order_no' => 'aaa']);
         //     DB::beginTransaction();
-        //     ResetProductModel::where('pid', 2)->update(['product_name' => 'bbb']);
+        //     ResetOrderModel::where('id', 2)->update(['order_no' => 'bbb']);
         //         DB::beginTransaction();
-        //         ResetProductModel::where('pid', 3)->update(['product_name' => 'ccc']);
+        //         ResetOrderModel::where('id', 3)->update(['order_no' => 'ccc']);
         //         DB::commit();
         //     DB::rollBack();
         // DB::commit();
 
         $txId = $this->beginDistributedTransaction();
-        $this->client->put('api/resetProduct/1', [
+        $this->client->put('api/ResetOrder/1', [
             'headers' => ['transact_id' => $txId],
-            'json' => ['product_name' => 'aaa']
+            'json' => ['order_no' => 'aaa']
         ]);
             $txId2 = $this->beginDistributedTransaction();
             $txId2 = implode('-', [$txId, $txId2]);
-            $this->client->put('api/resetProduct/2', [
+            $this->client->put('api/ResetOrder/2', [
                 'headers' => ['transact_id' => $txId2],
-                'json' => ['product_name' => 'bbb']
+                'json' => ['order_no' => 'bbb']
             ]);
 
                 $txId3 = $this->beginDistributedTransaction();
                 $txId3 = implode('-', [$txId2, $txId3]);
-                $this->client->put('api/resetProduct/3', [
+                $this->client->put('api/ResetOrder/3', [
                     'headers' => ['transact_id' => $txId3],
-                    'json' => ['product_name' => 'ccc']
+                    'json' => ['order_no' => 'ccc']
                 ]);
 
                 $this->commitDistributedTransaction($txId3);

@@ -2,7 +2,7 @@
 安装laravel5.5 - laravel8之间的版本，然后安装快速服务化的package
 >composer require windawake/laravel-reset-transaction dev-master
 
-首先创建ResetProductController.php控制器，创建ResetProductModel.php模型，创建reset_transaction和reset_product两张数据库表。这些操作只需要执行下面命令全部完成
+首先创建ResetOrderController.php控制器，创建ResetOrderModel.php模型，创建reset_transaction和reset_order两张数据库表。这些操作只需要执行下面命令全部完成
 ```shell
 php artisan resetTransact:create-examples  
 ```
@@ -68,10 +68,10 @@ class TransactionTest extends TestCase
     public function testCreateWithCommit()
     {
         $num = rand(1, 10000);
-        $productName = 'php ' . $num;
+        $orderName = 'php ' . $num;
         $data = [
             'store_id' => 1,
-            'product_name' => $productName,
+            'order_no' => $orderName,
         ];
 		// 开启分布式事务，其实是生成全局唯一id
         $transactId = $this->beginDistributedTransaction();
@@ -79,14 +79,14 @@ class TransactionTest extends TestCase
            在header 'transact_id' => $transactId,
         ];
 		// 分布式事务内，请求都需要在request header带上transact_id
-        $response = $this->post('api/resetProduct', $data, $header);
-        $product = $response->json();
+        $response = $this->post('api/ResetOrder', $data, $header);
+        $order = $response->json();
 		// 分布式事务提交，也是接口请求，把之前的存档记录全部处理
         $this->commitDistributedTransaction($transactId);
 
-        $response = $this->get('/api/resetProduct/' . $product['pid']);
-        $product = $response->json();
-        $this->assertEquals($productName, $product['product_name']);
+        $response = $this->get('/api/ResetOrder/' . $order['id']);
+        $order = $response->json();
+        $this->assertEquals($orderName, $order['order_no']);
     }
 
     private function beginDistributedTransaction()

@@ -2,11 +2,13 @@
 
 namespace Laravel\ResetTransaction;
 
+use Illuminate\Database\Capsule\Manager;
 use Illuminate\Support\ServiceProvider;
 use Laravel\ResetTransaction\Middleware\DistributeTransact;
 use Laravel\ResetTransaction\Console\CreateExamples;
 use Illuminate\Database\Connection;
 use Laravel\ResetTransaction\Database\MySqlConnection;
+use Laravel\ResetTransaction\Facades\ResetTransaction;
 
 class ResetTransactionServiceProvider extends ServiceProvider
 {
@@ -36,6 +38,10 @@ class ResetTransactionServiceProvider extends ServiceProvider
             }
         );
 
+        $this->app->singleton('rt', function($app){
+            return new ResetTransaction();
+        });
+
         $this->commands(
             'command.resetTransact.create-examples'
         );
@@ -44,5 +50,13 @@ class ResetTransactionServiceProvider extends ServiceProvider
             // Next we can initialize the connection.
             return new MySqlConnection($connection, $database, $prefix, $config);
         });
+
+
+        $configList = config('rt_database.connections', []);
+        $connections = $this->app['config']['database.connections'];
+        foreach($configList as $name => $config) {
+            $connections[$name] = $config;
+        }
+        $this->app['config']['database.connections'] = $connections;
     }
 }

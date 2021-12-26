@@ -11,7 +11,7 @@ In order to discuss technology with me, you can add me to wechat.
 Install the version between laravel5.5-laravel8, and then install the package
 >composer require windawake/laravel-reset-transaction dev-master
 
-First create the ResetProductController.php controller, create the ResetProductModel.php model, create two database tables reset_transaction and reset_product. These operations only need to execute the following commands to complete all
+First create the ResetOrderController.php controller, create the ResetOrderModel.php model, create two database tables reset_transaction and reset_order. These operations only need to execute the following commands to complete all
 ```shell
 php artisan resetTransact:create-examples  
 ```
@@ -76,10 +76,10 @@ class TransactionTest extends TestCase
     public function testCreateWithCommit()
     {
         $num = rand(1, 10000);
-        $productName = 'php ' . $num;
+        $orderName = 'php ' . $num;
         $data = [
             'store_id' => 1,
-            'product_name' => $productName,
+            'order_no' => $orderName,
         ];
 		// Start distributed transactions is actually generating a globally unique id
         $transactId = $this->beginDistributedTransaction();
@@ -87,14 +87,14 @@ class TransactionTest extends TestCase
            在header 'transact_id' => $transactId,
         ];
 		// In a distributed transaction, all requests need to carry transact_id in the request header
-        $response = $this->post('api/resetProduct', $data, $header);
-        $product = $response->json();
+        $response = $this->post('api/ResetOrder', $data, $header);
+        $order = $response->json();
 		// Distributed transaction submission is also an interface request to process all the previous archive records
         $this->commitDistributedTransaction($transactId);
 
-        $response = $this->get('/api/resetProduct/' . $product['pid']);
-        $product = $response->json();
-        $this->assertEquals($productName, $product['product_name']);
+        $response = $this->get('/api/ResetOrder/' . $order['id']);
+        $order = $response->json();
+        $this->assertEquals($orderName, $order['order_no']);
     }
 
     private function beginDistributedTransaction()

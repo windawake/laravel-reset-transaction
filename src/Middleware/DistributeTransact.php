@@ -17,6 +17,11 @@ class DistributeTransact
     public function handle($request, Closure $next)
     {
         $transactId = request()->header('transact_id');
+        $connection = request()->header('transact_connection');
+        if ($connection) {
+            DB::setDefaultConnection($connection);
+        }
+        
         if ($transactId) {
             $sqlArr = DB::table('reset_transaction')->where('transact_id', $transactId)->pluck('sql')->toArray();
             $sql = implode(';', $sqlArr);
@@ -25,15 +30,15 @@ class DistributeTransact
                 DB::unprepared($sql);
             }
 
-            session()->put('transact_id', $transactId);
+            session()->put('rt-transact_id', $transactId);
         }
 
         $response = $next($request);
 
         if ($transactId) {
             DB::rollBack();
-            session()->remove('transact_id');
-            $sqlArr = session()->remove('transact_sql');
+            session()->remove('rt-transact_id');
+            $sqlArr = session()->remove('rt-transact_sql');
 
             if ($sqlArr) {
                 foreach ($sqlArr as $item) {

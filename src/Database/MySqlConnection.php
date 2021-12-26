@@ -24,8 +24,8 @@ class MySqlConnection extends DatabaseMySqlConnection
     {
         $result = parent::run($query, $bindings, $callback);
 
-        $transactId = session()->get('transact_id');
-        if ($transactId && $query && !strpos($query, 'reset_transaction')) {
+        $rtTransactId = session()->get('rt-transact_id');
+        if ($rtTransactId && $query && !strpos($query, 'reset_transaction')) {
             $action = strtolower(substr(trim($query), 0, 6));
             $sql = str_replace("?", "'%s'", $query);
             $completeSql = vsprintf($sql, $bindings);
@@ -53,7 +53,7 @@ class MySqlConnection extends DatabaseMySqlConnection
                 }
 
                 $sqlItem = ['sql' => $backupSql, 'result' => $result];
-                session()->push('transact_sql', $sqlItem);
+                session()->push('rt-transact_sql', $sqlItem);
             }
 
             // Log::info($completeSql);
