@@ -3,10 +3,6 @@
 
 distributed transaction for call remote api service
 
-![](https://github.com/windawake/notepad/blob/master/images/webchat01.jpg)
-
-In order to discuss technology with me, you can add me to wechat.
-
 ## Overview
 Install the version between laravel5.5-laravel8, and then install the package
 >composer require windawake/laravel-reset-transaction dev-master
@@ -116,3 +112,10 @@ class TransactionTest extends TestCase
 }
 
 ```
+
+## Contact
+
+
+![](https://github.com/windawake/notepad/blob/master/images/webchat01.jpg)
+
+In order to discuss technology with me, you can add me to wechat.
