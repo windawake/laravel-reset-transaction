@@ -15,7 +15,11 @@ class ResetOrderController extends Controller
     public function index(Request $request)
     {
         //
-        return ResetOrderModel::paginate();
+        $query = ResetOrderModel::query();
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+        return $query->paginate();
     }
 
     /**
@@ -70,5 +74,21 @@ class ResetOrderController extends Controller
         $item = ResetOrderModel::findOrFail($id);
         $ret = $item->delete();
         return ['result' => $ret];
+    }
+
+    /**
+     * Display count.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function count(Request $request)
+    {
+        //
+        $model = new ResetOrderModel();
+        if ($request->has('status')) {
+            $model->where('status', $request->input('status'));
+        }
+        
+        return $model->count();
     }
 }

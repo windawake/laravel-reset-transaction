@@ -144,6 +144,8 @@ class CreateExamples extends Command
                         $table->string('order_no')->default('');
                         $table->integer('stock_qty')->default(0);
                         $table->decimal('amount')->default(0);
+                        $table->tinyInteger('status')->default(0);
+                        $table->unique('order_no');
                     });
                 }
 

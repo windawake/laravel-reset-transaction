@@ -23,7 +23,8 @@ class DistributeTransact
         }
         
         if ($transactId) {
-            $sqlArr = DB::table('reset_transaction')->where('transact_id', $transactId)->pluck('sql')->toArray();
+            $txIdArr = explode('-', $transactId);
+            $sqlArr = DB::table('reset_transaction')->where('transact_id', 'like', $txIdArr[0].'%')->pluck('sql')->toArray();
             $sql = implode(';', $sqlArr);
             DB::beginTransaction();
             if ($sqlArr) {
@@ -35,6 +36,7 @@ class DistributeTransact
 
         $response = $next($request);
 
+        $transactId = request()->header('transact_id');
         if ($transactId) {
             DB::rollBack();
             session()->remove('rt-transact_id');

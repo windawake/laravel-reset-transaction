@@ -7,28 +7,43 @@ use Laravel\ResetTransaction\Exception\ResetTransactionException;
 
 class ResetTransaction
 {
-    private $transactId;
+    private $transactIdArr = [];
+    private $transactRollback = [];
     private $checkResult;
 
     public function beginTransaction()
     {
-        $this->transactId = session_create_id();
         DB::beginTransaction();
-        session()->put('rt-transact_id', $this->transactId);
+        $transactId = session_create_id();
 
-        return $this->transactId;
+        array_push($this->transactIdArr, $transactId);
+        if (count($this->transactIdArr) == 1) {
+            session()->put('rt-transact_id', $transactId);
+        }
+
+        return $this->getTransactId();
     }
 
     public function commit()
     {
         DB::rollBack();
         $this->logRT();
-        
+
+        if (count($this->transactIdArr) > 1) {
+            array_pop($this->transactIdArr);
+            return true;
+        }
+
+
         $xidArr = $this->getUsedXidArr();
         $this->xaBeginTransaction($xidArr);
 
         foreach ($xidArr as $name => $xid) {
-            $sqlCollects = DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->transactId . '%')->get();
+            foreach ($this->transactRollback as $transactId) {
+                DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $transactId . '%')->delete();
+            }
+
+            $sqlCollects = DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->getTransactId() . '%')->get();
             if ($sqlCollects->count() > 0) {
                 foreach ($sqlCollects as $item) {
                     $result = DB::connection($name)->getPdo()->exec($item->sql);
@@ -36,7 +51,7 @@ class ResetTransaction
                         throw new ResetTransactionException("db had been changed by anothor transact_id");
                     }
                 }
-                DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->transactId . '%')->delete();
+                DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->getTransactId() . '%')->delete();
             }
         }
 
@@ -48,26 +63,30 @@ class ResetTransaction
     {
         DB::rollBack();
         $this->logRT();
-        
+
+        if (count($this->transactIdArr) > 1) {
+            $transactId = $this->getTransactId();
+            array_push($this->transactRollback, $transactId);
+
+            array_pop($this->transactIdArr);
+            return true;
+        }
+
         $xidArr = $this->getUsedXidArr();
         $this->xaBeginTransaction($xidArr);
 
-        foreach($xidArr as $name => $xid) {
-            DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->transactId.'%')->delete();
+        foreach ($xidArr as $name => $xid) {
+            DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->getTransactId() . '%')->delete();
         }
 
         $this->xaCommit($xidArr);
         $this->removeRT();
     }
 
-    public function setTransactId(string $transactId)
-    {
-        $this->transactId = $transactId;
-    }
 
     public function getTransactId()
     {
-        return $this->transactId;
+        return implode('-', $this->transactIdArr);
     }
 
     public function setCheckResult(bool $boolean)
@@ -84,8 +103,8 @@ class ResetTransaction
     {
         $conList = config('rt_database.connections', []);
         $xidArr = [];
-        foreach($conList as $name => $config) {
-            $count = DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->transactId.'%')->count();
+        foreach ($conList as $name => $config) {
+            $count = DB::connection($name)->table('reset_transaction')->where('transact_id', 'like', $this->getTransactId() . '%')->count();
             if ($count > 0) {
                 $xid = session_create_id();
                 $xidArr[$name] = $xid;
@@ -96,12 +115,12 @@ class ResetTransaction
     }
 
     private function logRT()
-    {        
+    {
         $sqlArr = session()->get('rt-transact_sql');
         if ($sqlArr) {
             foreach ($sqlArr as $item) {
                 DB::table('reset_transaction')->insert([
-                    'transact_id' => $this->transactId,
+                    'transact_id' => $this->getTransactId(),
                     'sql' => value($item['sql']),
                     'result' => $item['result'],
                 ]);
@@ -111,8 +130,10 @@ class ResetTransaction
 
     private function removeRT()
     {
-        $this->transactId = null;
+        $this->transactIdArr = [];
+        $this->transactRollback = [];
         $this->checkResult = false;
+
         session()->remove('rt-transact_id');
         session()->remove('rt-transact_sql');
     }
@@ -151,7 +172,7 @@ class ResetTransaction
 
     private function _XAStart($xidArr)
     {
-        foreach($xidArr as $name => $xid) {
+        foreach ($xidArr as $name => $xid) {
             DB::connection($name)->getPdo()->exec("XA START '{$xid}'");
         }
     }
@@ -159,7 +180,7 @@ class ResetTransaction
 
     private function _XAEnd($xidArr)
     {
-        foreach($xidArr as $name => $xid) {
+        foreach ($xidArr as $name => $xid) {
             DB::connection($name)->getPdo()->exec("XA END '{$xid}'");
         }
     }
@@ -167,7 +188,7 @@ class ResetTransaction
 
     private function _XAPrepare($xidArr)
     {
-        foreach($xidArr as $name => $xid) {
+        foreach ($xidArr as $name => $xid) {
             DB::connection($name)->getPdo()->exec("XA PREPARE '{$xid}'");
         }
     }
@@ -175,14 +196,14 @@ class ResetTransaction
 
     private function _XACommit($xidArr)
     {
-        foreach($xidArr as $name => $xid) {
+        foreach ($xidArr as $name => $xid) {
             DB::connection($name)->getPdo()->exec("XA COMMIT '{$xid}'");
         }
     }
 
     private function _XARollback($xidArr)
     {
-        foreach($xidArr as $name => $xid) {
+        foreach ($xidArr as $name => $xid) {
             DB::connection($name)->getPdo()->exec("XA ROLLBACK '{$xid}'");
         }
     }

@@ -15,8 +15,10 @@ class ResetOrderModel extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'id',
         'order_no',
         'stock_qty',
         'amount',
+        'status',
     ];
 }
