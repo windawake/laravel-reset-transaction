@@ -6,7 +6,7 @@ use Laravel\ResetTransaction\Exception\ResetTransactionException;
 
 Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function () {
     Route::resource('/resetOrder', \App\Http\Controllers\ResetOrderController::class);
-    Route::get('/resetOrder/count', [\App\Http\Controllers\ResetOrderController::class, 'count']);
+    Route::post('/resetAccountUser/createOrders', [\App\Http\Controllers\ResetAccountController::class, 'createOrders']);
     Route::resource('/resetStorage', \App\Http\Controllers\ResetStorageController::class);
     Route::resource('/resetAccount', \App\Http\Controllers\ResetAccountController::class);
 });

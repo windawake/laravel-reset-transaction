@@ -83,6 +83,11 @@ class ResetTransaction
         $this->removeRT();
     }
 
+    public function putTransactId($transactId)
+    {
+        $this->transactIdArr[] = $transactId;
+    }
+
 
     public function getTransactId()
     {

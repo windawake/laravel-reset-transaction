@@ -220,6 +220,24 @@ class ServiceTest extends TestCase
         $this->assertTrue($resArr['total'] == 1);
     }
 
+    // public function testUserCreateOrders()
+    // {
+    //     $transactId = RT::beginTransaction();
+        
+    //     // 请求账户服务，减金额
+    //     $response = $this->client->post('/api/resetAccountUser/createOrders', [
+    //         'headers' => [
+    //             'transact_id' => $transactId,
+    //             'transact_connection' => 'service_account'
+    //         ]
+    //     ]);
+    //     $resArr = $this->responseToArray($response);
+
+    //     $this->assertTrue($resArr['total'] == 1);
+
+    //     RT::commit();
+    // }
+
     private function responseToArray($response)
     {
         $contents = $response->getBody()->getContents();
