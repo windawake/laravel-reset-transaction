@@ -75,20 +75,4 @@ class ResetOrderController extends Controller
         $ret = $item->delete();
         return ['result' => $ret];
     }
-
-    /**
-     * Display count.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function count(Request $request)
-    {
-        //
-        $model = new ResetOrderModel();
-        if ($request->has('status')) {
-            $model->where('status', $request->input('status'));
-        }
-        
-        return $model->count();
-    }
 }

@@ -11,15 +11,17 @@ class ResetTransaction
     private $transactRollback = [];
     private $checkResult;
 
-    public function beginTransaction()
+    public function beginTransaction($transactId = '')
     {
         DB::beginTransaction();
-        $transactId = session_create_id();
 
-        array_push($this->transactIdArr, $transactId);
-        if (count($this->transactIdArr) == 1) {
-            session()->put('rt-transact_id', $transactId);
+        if ($transactId) {
+            $this->setTransactId($transactId);
+        } else {
+            $transactId = session_create_id();
+            array_push($this->transactIdArr, $transactId);
         }
+        
 
         return $this->getTransactId();
     }
@@ -59,7 +61,7 @@ class ResetTransaction
         $this->removeRT();
     }
 
-    public function rollback()
+    public function rollBack()
     {
         DB::rollBack();
         $this->logRT();
@@ -83,9 +85,9 @@ class ResetTransaction
         $this->removeRT();
     }
 
-    public function putTransactId($transactId)
+    public function setTransactId($transactId)
     {
-        $this->transactIdArr[] = $transactId;
+        $this->transactIdArr = explode('-', $transactId);
     }
 
 
@@ -139,7 +141,6 @@ class ResetTransaction
         $this->transactRollback = [];
         $this->checkResult = false;
 
-        session()->remove('rt-transact_id');
         session()->remove('rt-transact_sql');
     }
 

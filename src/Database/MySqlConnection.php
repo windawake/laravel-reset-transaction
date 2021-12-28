@@ -6,6 +6,7 @@ use Illuminate\Database\MySqlConnection as DatabaseMySqlConnection;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Laravel\ResetTransaction\Facades\RT;
 
 class MySqlConnection extends DatabaseMySqlConnection
 {
@@ -24,7 +25,7 @@ class MySqlConnection extends DatabaseMySqlConnection
     {
         $result = parent::run($query, $bindings, $callback);
 
-        $rtTransactId = session()->get('rt-transact_id');
+        $rtTransactId = RT::getTransactId();
         if ($rtTransactId && $query && !strpos($query, 'reset_transaction')) {
             $action = strtolower(substr(trim($query), 0, 6));
             $sql = str_replace("?", "'%s'", $query);

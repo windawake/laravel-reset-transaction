@@ -220,12 +220,12 @@ class ServiceTest extends TestCase
         $this->assertTrue($resArr['total'] == 1);
     }
 
-    // public function testUserCreateOrders()
+    // public function testCreateOrdersCommit()
     // {
     //     $transactId = RT::beginTransaction();
         
     //     // 请求账户服务，减金额
-    //     $response = $this->client->post('/api/resetAccountUser/createOrders', [
+    //     $response = $this->client->post('/api/resetAccountUser/createOrdersRollback', [
     //         'headers' => [
     //             'transact_id' => $transactId,
     //             'transact_connection' => 'service_account'
@@ -235,7 +235,25 @@ class ServiceTest extends TestCase
 
     //     $this->assertTrue($resArr['total'] == 1);
 
-    //     RT::commit();
+    //     // RT::commit();
+    // }
+
+    // public function testCreateOrdersRollback()
+    // {
+    //     $transactId = RT::beginTransaction();
+        
+    //     // 请求账户服务，减金额
+    //     $response = $this->client->post('/api/resetAccountUser/createOrdersCommit', [
+    //         'headers' => [
+    //             'transact_id' => $transactId,
+    //             'transact_connection' => 'service_account'
+    //         ]
+    //     ]);
+    //     $resArr = $this->responseToArray($response);
+
+    //     $this->assertTrue($resArr['total'] == 1);
+
+    //     RT::rollBack();
     // }
 
     private function responseToArray($response)

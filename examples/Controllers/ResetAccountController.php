@@ -82,9 +82,14 @@ class ResetAccountController extends Controller
         return ['result' => $ret];
     }
 
-    public function createOrders()
+    /**
+     * transaction create order then commit
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function createOrdersCommit()
     {
-        $baseUri = 'http://127.0.0.1:8000';
+        $baseUri = 'http://127.0.0.1:8001';
         $client = new Client([
             'base_uri' => $baseUri,
             'timeout' => 60,
@@ -117,6 +122,50 @@ class ResetAccountController extends Controller
         ResetAccountModel::where('amount', '>', 4)->decrement('amount', 4);
 
         RT::commit();
+
+        return ['total' => 1];
+    }
+
+    /**
+     * transaction create order then rollBack
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function createOrdersRollback()
+    {
+        $baseUri = 'http://127.0.0.1:8001';
+        $client = new Client([
+            'base_uri' => $baseUri,
+            'timeout' => 60,
+        ]);
+
+        $transactId = RT::beginTransaction();
+        
+        $client->post('/api/resetOrder', [
+            'json' => [
+                'order_no' => rand(1000, 9999),
+                'stock_qty' => 1,
+                'amount' => 3
+            ],
+            'headers' => [
+                'transact_id' => $transactId,
+                'transact_connection' => 'service_order'
+            ]
+        ]);
+
+        $client->put('/api/resetStorage/1', [
+            'json' => [
+                'decr_stock_qty' => 1
+            ],
+            'headers' => [
+                'transact_id' => $transactId,
+                'transact_connection' => 'service_storage'
+            ]
+        ]);
+
+        ResetAccountModel::where('amount', '>', 3)->decrement('amount', 3);
+
+        RT::rollBack();
 
         return ['total' => 1];
     }

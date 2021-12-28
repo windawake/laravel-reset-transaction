@@ -4,6 +4,7 @@ namespace Laravel\ResetTransaction\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\DB;
+use Laravel\ResetTransaction\Facades\RT;
 
 class DistributeTransact
 {
@@ -26,12 +27,11 @@ class DistributeTransact
             $txIdArr = explode('-', $transactId);
             $sqlArr = DB::table('reset_transaction')->where('transact_id', 'like', $txIdArr[0].'%')->pluck('sql')->toArray();
             $sql = implode(';', $sqlArr);
-            DB::beginTransaction();
+            RT::beginTransaction($transactId);
             if ($sqlArr) {
                 DB::unprepared($sql);
             }
 
-            session()->put('rt-transact_id', $transactId);
         }
 
         $response = $next($request);
@@ -39,7 +39,6 @@ class DistributeTransact
         $transactId = request()->header('transact_id');
         if ($transactId) {
             DB::rollBack();
-            session()->remove('rt-transact_id');
             $sqlArr = session()->remove('rt-transact_sql');
 
             if ($sqlArr) {
