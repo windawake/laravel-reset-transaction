@@ -47,8 +47,8 @@ class CreateExamples extends Command
      */
     public function handle()
     {
-        $this->addTableToDatabase();
         $this->addFileToApp();
+        $this->addTableToDatabase();
         $this->addTestsuitToPhpunit();
 
         $this->info('Example created successfully!');
