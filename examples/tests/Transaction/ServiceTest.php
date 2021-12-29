@@ -220,41 +220,47 @@ class ServiceTest extends TestCase
         $this->assertTrue($resArr['total'] == 1);
     }
 
-    // public function testCreateOrdersCommit()
-    // {
-    //     $transactId = RT::beginTransaction();
+    public function testCreateOrdersCommit()
+    {
+        $transactId = RT::beginTransaction();
         
-    //     // 请求账户服务，减金额
-    //     $response = $this->client->post('/api/resetAccountUser/createOrdersRollback', [
-    //         'headers' => [
-    //             'transact_id' => $transactId,
-    //             'transact_connection' => 'service_account'
-    //         ]
-    //     ]);
-    //     $resArr = $this->responseToArray($response);
+        // 请求账户服务，减金额
+        $response = $this->client->post('/api/resetAccountUser/createOrdersRollback', [
+            'headers' => [
+                'transact_id' => $transactId,
+                'transact_connection' => 'service_account'
+            ]
+        ]);
+        $resArr = $this->responseToArray($response);
 
-    //     $this->assertTrue($resArr['total'] == 1);
+        $this->assertTrue($resArr['total'] == 1);
 
-    //     // RT::commit();
-    // }
+        ResetOrderModel::create([
+            'order_no' => rand(1000, 9999),
+            'stock_qty' => 0,
+            'amount' => 0
+        ]);
 
-    // public function testCreateOrdersRollback()
-    // {
-    //     $transactId = RT::beginTransaction();
+        RT::commit();
+    }
+
+    public function testCreateOrdersRollback()
+    {
+        $transactId = RT::beginTransaction();
         
-    //     // 请求账户服务，减金额
-    //     $response = $this->client->post('/api/resetAccountUser/createOrdersCommit', [
-    //         'headers' => [
-    //             'transact_id' => $transactId,
-    //             'transact_connection' => 'service_account'
-    //         ]
-    //     ]);
-    //     $resArr = $this->responseToArray($response);
+        // 请求账户服务，减金额
+        $response = $this->client->post('/api/resetAccountUser/createOrdersCommit', [
+            'headers' => [
+                'transact_id' => $transactId,
+                'transact_connection' => 'service_account'
+            ]
+        ]);
+        $resArr = $this->responseToArray($response);
 
-    //     $this->assertTrue($resArr['total'] == 1);
+        $this->assertTrue($resArr['total'] == 1);
 
-    //     RT::rollBack();
-    // }
+        RT::rollBack();
+    }
 
     private function responseToArray($response)
     {

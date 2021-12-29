@@ -53,7 +53,11 @@ class MySqlConnection extends DatabaseMySqlConnection
                     };
                 }
 
-                $sqlItem = ['sql' => $backupSql, 'result' => $result];
+                $sqlItem = [
+                    'transact_id' => RT::getTransactId(), 
+                    'sql' => $backupSql, 
+                    'result' => $result
+                ];
                 session()->push('rt-transact_sql', $sqlItem);
             }
 

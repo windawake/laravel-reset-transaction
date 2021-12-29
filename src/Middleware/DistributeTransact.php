@@ -24,32 +24,14 @@ class DistributeTransact
         }
         
         if ($transactId) {
-            $txIdArr = explode('-', $transactId);
-            $sqlArr = DB::table('reset_transaction')->where('transact_id', 'like', $txIdArr[0].'%')->pluck('sql')->toArray();
-            $sql = implode(';', $sqlArr);
-            RT::beginTransaction($transactId);
-            if ($sqlArr) {
-                DB::unprepared($sql);
-            }
-
+            RT::middlewareBeginTransaction($transactId);
         }
 
         $response = $next($request);
 
         $transactId = request()->header('transact_id');
         if ($transactId) {
-            DB::rollBack();
-            $sqlArr = session()->remove('rt-transact_sql');
-
-            if ($sqlArr) {
-                foreach ($sqlArr as $item) {
-                    DB::table('reset_transaction')->insert([
-                        'transact_id' => $transactId,
-                        'sql' => value($item['sql']),
-                        'result' => $item['result'],
-                    ]);
-                }
-            }
+            RT::middlewareRollback();
         }
 
         return $response;

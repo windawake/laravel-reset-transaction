@@ -153,7 +153,7 @@ class ResetAccountController extends Controller
             ]
         ]);
 
-        $client->put('/api/resetStorage/1', [
+        $client->put('/api/resetStorageUser/updateWithCommit/1', [
             'json' => [
                 'decr_stock_qty' => 1
             ],

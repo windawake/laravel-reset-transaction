@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ResetStorageModel;
 use Illuminate\Http\Request;
+use Laravel\ResetTransaction\Facades\RT;
 
 class ResetStorageController extends Controller
 {
@@ -74,6 +75,23 @@ class ResetStorageController extends Controller
         //
         $item = ResetStorageModel::findOrFail($id);
         $ret = $item->delete();
+        return ['result' => $ret];
+    }
+
+    public function updateWithCommit(Request $request, $id)
+    {
+        $item = ResetStorageModel::findOrFail($id);
+        RT::beginTransaction();
+
+        if ($request->has('decr_stock_qty')) {
+            $decrQty = (float) $request->input('decr_stock_qty');
+            $ret = $item->where('stock_qty', '>', $decrQty)->decrement('stock_qty', $decrQty);
+        } else {
+            $ret = $item->update($request->input());
+        }
+        
+        RT::commit();
+
         return ['result' => $ret];
     }
 }

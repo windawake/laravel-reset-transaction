@@ -10,10 +10,16 @@ use Illuminate\Support\Facades\Facade;
  * @method static void rollBack()
  * @method static void setTransactId(string $transactId)
  * @method static string getTransactId()
+ * @method static void middlewareRollback()
+ * @method static void middlewareBeginTransaction(string $transactId)
  *
  */
 class RT extends Facade
 {
+    const STATUS_START = 0;
+    const STATUS_COMMIT = 1;
+    const STATUS_ROLLBACK = 2;
+    
     /**
      * Get the registered name of the component.
      *

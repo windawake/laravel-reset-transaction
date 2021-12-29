@@ -11,6 +11,8 @@ Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function
 
     Route::post('/resetAccountUser/createOrdersCommit', [\App\Http\Controllers\ResetAccountController::class, 'createOrdersCommit']);
     Route::post('/resetAccountUser/createOrdersRollback', [\App\Http\Controllers\ResetAccountController::class, 'createOrdersRollback']);
+
+    Route::put('/resetStorageUser/updateWithCommit/{id}', [\App\Http\Controllers\ResetStorageController::class, 'updateWithCommit']);
 });
 
 
