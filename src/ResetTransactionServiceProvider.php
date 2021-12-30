@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use Laravel\ResetTransaction\Middleware\DistributeTransact;
 use Laravel\ResetTransaction\Console\CreateExamples;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Query\Builder;
 use Laravel\ResetTransaction\Database\MySqlConnection;
 use Laravel\ResetTransaction\Facades\ResetTransaction;
 
@@ -51,6 +52,11 @@ class ResetTransactionServiceProvider extends ServiceProvider
             return new MySqlConnection($connection, $database, $prefix, $config);
         });
 
+        Builder::macro('setCheckResult', function(bool $bool){
+            $this->getConnection()->setCheckResult($bool);
+
+            return $this;
+        });
 
         $configList = config('rt_database.connections', []);
         $connections = $this->app['config']['database.connections'];

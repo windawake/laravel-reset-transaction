@@ -131,6 +131,7 @@ class CreateExamples extends Command
                         $table->tinyInteger('transact_status')->default(0);
                         $table->text('sql');
                         $table->integer('result')->default(0);
+                        $table->tinyInteger('check_result')->default(0);
                         $table->dateTime('created_at')->useCurrent();
                         $table->index('request_id');
                         $table->index('transact_id');

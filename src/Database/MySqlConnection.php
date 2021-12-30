@@ -10,6 +10,23 @@ use Laravel\ResetTransaction\Facades\RT;
 
 class MySqlConnection extends DatabaseMySqlConnection
 {
+    /**
+     * The switch of detecting sql
+     *
+     * @var bool
+     */
+    protected $checkResult = false;
+
+    /**
+     * Detect the return value when committing the transaction
+     *
+     * @param bool $checkResult
+     */
+    public function setCheckResult(bool $checkResult)
+    {
+        $this->checkResult = $checkResult;
+        return $this;
+    }
 
     /**
      * Run a SQL statement and log its execution context.
@@ -56,13 +73,16 @@ class MySqlConnection extends DatabaseMySqlConnection
                 $sqlItem = [
                     'transact_id' => RT::getTransactId(), 
                     'sql' => $backupSql, 
-                    'result' => $result
+                    'result' => $result,
+                    'check_result' => (int) $this->checkResult,
                 ];
                 session()->push('rt-transact_sql', $sqlItem);
             }
 
             // Log::info($completeSql);
         }
+
+        $this->checkResult = false;
 
         return $result;
     }

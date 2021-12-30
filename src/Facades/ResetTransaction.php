@@ -8,7 +8,6 @@ use Laravel\ResetTransaction\Exception\ResetTransactionException;
 class ResetTransaction
 {
     protected $transactIdArr = [];
-    protected $checkResult;
     protected $transactRollback = [];
 
     public function beginTransaction()
@@ -48,7 +47,7 @@ class ResetTransaction
                 foreach ($sqlCollects as $item) {
                     if ($item->transact_status != RT::STATUS_ROLLBACK) {
                         $result = DB::connection($name)->getPdo()->exec($item->sql);
-                        if ($this->checkResult && $result != $item->result) {
+                        if ($item->check_result && $result != $item->result) {
                             throw new ResetTransactionException("db had been changed by anothor transact_id");
                         }
                     }
@@ -132,16 +131,6 @@ class ResetTransaction
         return implode('-', $this->transactIdArr);
     }
 
-    public function setCheckResult(bool $boolean)
-    {
-        $this->checkResult = $boolean;
-    }
-
-    public function getCheckResult()
-    {
-        return $this->checkResult;
-    }
-
     public function getTransactRollback()
     {
         return $this->transactRollback;
@@ -172,6 +161,7 @@ class ResetTransaction
                     'transact_status' => $status,
                     'sql' => value($item['sql']),
                     'result' => $item['result'],
+                    'check_result' => $item['check_result'],
                 ]);
             }
         }
@@ -180,7 +170,6 @@ class ResetTransaction
     private function removeRT()
     {
         $this->transactIdArr = [];
-        $this->checkResult = false;
 
         session()->remove('rt-transact_sql');
     }
