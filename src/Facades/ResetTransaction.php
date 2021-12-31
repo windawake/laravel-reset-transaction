@@ -32,7 +32,7 @@ class ResetTransaction
 
         $this->logRT(RT::STATUS_COMMIT);
 
-
+        
         $xidArr = $this->getUsedXidArr();
         $this->xaBeginTransaction($xidArr);
         foreach ($xidArr as $name => $xid) {
@@ -46,7 +46,7 @@ class ResetTransaction
             if ($sqlCollects->count() > 0) {
                 foreach ($sqlCollects as $item) {
                     if ($item->transact_status != RT::STATUS_ROLLBACK) {
-                        $result = DB::connection($name)->getPdo()->exec($item->sql);
+                        $result = DB::connection($name)->affectingStatement($item->sql);
                         if ($item->check_result && $result != $item->result) {
                             throw new ResetTransactionException("db had been changed by anothor transact_id");
                         }
@@ -241,6 +241,52 @@ class ResetTransaction
     {
         foreach ($xidArr as $name => $xid) {
             DB::connection($name)->getPdo()->exec("XA ROLLBACK '{$xid}'");
+        }
+    }
+
+    public function saveQuery($query, $bindings, $result, $checkResult)
+    {
+        $connection = DB::connection();
+        $rtTransactId = $this->getTransactId();
+        if ($rtTransactId && $query && !strpos($query, 'reset_transaction')) {
+            $subString = strtolower(substr(trim($query), 0, 12));
+            $actionArr = explode(' ', $subString);
+            $action = $actionArr[0];
+
+            $sql = str_replace("?", "'%s'", $query);
+            $completeSql = vsprintf($sql, $bindings);
+
+            if (in_array($action, ['insert', 'update', 'delete', 'set', 'savepoint', 'rollback'])) {
+                $backupSql = $completeSql;
+                if ($action == 'insert') {
+                    $lastId = $connection->getPdo()->lastInsertId();
+                    // extract variables from sql
+                    preg_match("/insert into (.+) \((.+)\) values \((.+)\)/", $backupSql, $match);
+                    $database = $connection->getConfig('database');
+                    $table = $match[1];
+                    $columns = $match[2];
+                    $parameters = $match[3];
+
+                    $backupSql = function () use ($database, $table, $columns, $parameters, $lastId) {
+                        $columnItem = DB::selectOne('select column_name as `column_name` from information_schema.columns where table_schema = ? and table_name = ? and column_key="PRI"', [$database, trim($table, '`')]);
+                        $primaryKey = $columnItem->column_name;
+
+                        $columns = "`{$primaryKey}`, " . $columns;
+
+                        $parameters = "'{$lastId}', " . $parameters;
+                        return "insert into $table ($columns) values ($parameters)";
+                    };
+                }
+
+                $sqlItem = [
+                    'transact_id' => $rtTransactId, 
+                    'sql' => $backupSql, 
+                    'result' => $result,
+                    'check_result' => (int) $checkResult,
+                ];
+                session()->push('rt-transact_sql', $sqlItem);
+            }
+
         }
     }
 }

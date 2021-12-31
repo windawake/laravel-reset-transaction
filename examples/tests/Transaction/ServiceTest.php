@@ -223,6 +223,12 @@ class ServiceTest extends TestCase
     public function testCreateOrdersCommit()
     {
         $transactId = RT::beginTransaction();
+
+        ResetOrderModel::create([
+            'order_no' => rand(1000, 9999),
+            'stock_qty' => 0,
+            'amount' => 0
+        ]);
         
         // 请求账户服务，减金额
         $response = $this->client->post('/api/resetAccountUser/createOrdersRollback', [
@@ -234,12 +240,6 @@ class ServiceTest extends TestCase
         $resArr = $this->responseToArray($response);
 
         $this->assertTrue($resArr['total'] == 1);
-
-        ResetOrderModel::create([
-            'order_no' => rand(1000, 9999),
-            'stock_qty' => 0,
-            'amount' => 0
-        ]);
 
         RT::commit();
     }
@@ -266,5 +266,38 @@ class ServiceTest extends TestCase
     {
         $contents = $response->getBody()->getContents();
         return json_decode($contents, true);
+    }
+
+    public function testCheckResult()
+    {
+        RT::beginTransaction();
+        DB::beginTransaction();
+        DB::table('reset_order')->setCheckResult(true)->where('id', 1)->update(['stock_qty' => 110]);
+        DB::commit();
+        RT::commit();
+
+        $this->assertTrue(true);
+    }
+
+    public function testLogCommit()
+    {
+        DB::beginTransaction();
+        $transactId = '6abtl2inkilkvus7bftjhdi8nt';
+        
+        $sqlCollects = DB::table('reset_transaction')->where('transact_id', 'like', $transactId . '%')->get();
+            if ($sqlCollects->count() > 0) {
+                foreach ($sqlCollects as $item) {
+                    if ($item->transact_status != RT::STATUS_ROLLBACK) {
+                        $result = DB::affectingStatement($item->sql);
+                        if ($item->check_result && $result != $item->result) {
+                            var_dump("db had been changed by anothor transact_id");
+                        }
+                    }
+                }
+            }
+
+        DB::commit();
+
+        $this->assertTrue(true);
     }
 }
