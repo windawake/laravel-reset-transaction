@@ -91,7 +91,8 @@ class CreateExamples extends Command
      */
     private function addTableToDatabase()
     {
-        $transactTable = 'reset_transaction';
+        $transactTable = 'reset_transact';
+        $transactReqTable = 'reset_transact_req';
         $orderTable = 'reset_order';
         $storageTable = 'reset_storage';
         $accountTable = 'reset_account';
@@ -102,13 +103,13 @@ class CreateExamples extends Command
 
         $serviceMap = [
             $orderService => [
-                $transactTable, $orderTable
+                $transactTable, $transactReqTable, $orderTable
             ],
             $storageService => [
-                $transactTable, $storageTable
+                $transactTable, $transactReqTable, $storageTable
             ],
             $accountService => [
-                $transactTable, $accountTable
+                $transactTable, $transactReqTable, $accountTable
             ]
         ];
 
@@ -125,8 +126,8 @@ class CreateExamples extends Command
                     $fullTable = $service . '.' . $transactTable;
                     Schema::dropIfExists($fullTable);
                     Schema::create($fullTable, function (Blueprint $table) {
-                        $table->increments('id');
-                        $table->string('request_id', 32)->default('');
+                        $table->bigIncrements('id');
+                        $table->string('request_id', 32);
                         $table->string('transact_id', 512);
                         $table->tinyInteger('transact_status')->default(0);
                         $table->text('sql');
@@ -135,6 +136,18 @@ class CreateExamples extends Command
                         $table->dateTime('created_at')->useCurrent();
                         $table->index('request_id');
                         $table->index('transact_id');
+                    });
+                }
+
+                if ($table == $transactReqTable) {
+                    $fullTable = $service . '.' . $transactReqTable;
+                    Schema::dropIfExists($fullTable);
+                    Schema::create($fullTable, function (Blueprint $table) {
+                        $table->bigIncrements('id');
+                        $table->string('request_id', 32);
+                        $table->text('response');
+                        $table->dateTime('created_at')->useCurrent();
+                        $table->unique('request_id');
                     });
                 }
 

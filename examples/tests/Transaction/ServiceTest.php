@@ -32,6 +32,9 @@ class ServiceTest extends TestCase
             'base_uri' => $this->baseUri,
             'timeout' => 60,
         ]);
+
+        $requestId = session_create_id();
+        session()->put('rt_request_id', $requestId);
     }
 
     public function testCreateOrderWithRollback()
@@ -50,26 +53,32 @@ class ServiceTest extends TestCase
             'stock_qty' => $stockQty,
             'amount' => $amount
         ]);
+
+        $requestId = session_create_id();
         // 请求库存服务，减库存
         $response = $this->client->put('/api/resetStorage/1', [
             'json' => [
                 'decr_stock_qty' => $stockQty
             ],
             'headers' => [
-                'transact_id' => $transactId,
-                'transact_connection' => 'service_storage'
+                'rt_request_id' => $requestId,
+                'rt_transact_id' => $transactId,
+                'rt_connection' => 'service_storage'
             ]
         ]);
         $resArr1 = $this->responseToArray($response);
         $this->assertTrue($resArr1['result'] == 1, 'lack of stock'); //返回值是1，说明操作成功
+
+        $requestId = session_create_id();
         // 请求账户服务，减金额
         $response = $this->client->put('/api/resetAccount/1', [
             'json' => [
                 'decr_amount' => $amount
             ],
             'headers' => [
-                'transact_id' => $transactId,
-                'transact_connection' => 'service_account'
+                'rt_request_id' => $requestId,
+                'rt_transact_id' => $transactId,
+                'rt_connection' => 'service_account'
             ]
         ]);
         $resArr2 = $this->responseToArray($response);
@@ -102,26 +111,32 @@ class ServiceTest extends TestCase
             'stock_qty' => $stockQty,
             'amount' => $amount
         ]);
+        $requestId = session_create_id();
+
         // 请求库存服务，减库存
         $response = $this->client->put('/api/resetStorage/1', [
             'json' => [
                 'decr_stock_qty' => $stockQty
             ],
             'headers' => [
-                'transact_id' => $transactId,
-                'transact_connection' => 'service_storage'
+                'rt_request_id' => $requestId,
+                'rt_transact_id' => $transactId,
+                'rt_connection' => 'service_storage'
             ]
         ]);
         $resArr1 = $this->responseToArray($response);
         $this->assertTrue($resArr1['result'] == 1, 'lack of stock'); //返回值是1，说明操作成功
+
+        $requestId = session_create_id();
         // 请求账户服务，减金额
         $response = $this->client->put('/api/resetAccount/1', [
             'json' => [
                 'decr_amount' => $amount
             ],
             'headers' => [
-                'transact_id' => $transactId,
-                'transact_connection' => 'service_account'
+                'rt_request_id' => $requestId,
+                'rt_transact_id' => $transactId,
+                'rt_connection' => 'service_account'
             ]
         ]);
         $resArr2 = $this->responseToArray($response);
@@ -147,7 +162,6 @@ class ServiceTest extends TestCase
                 'id' => $id,
             ], [
                 'order_no' => $orderNo,
-                'status' => 0,
             ]);
         }
 
@@ -160,8 +174,9 @@ class ServiceTest extends TestCase
                 'status' => $status,
             ],
             'headers' => [
-                'transact_id' => $txId,
-                'transact_connection' => 'service_order'
+                'rt_request_id' => session_create_id(),
+                'rt_transact_id' => $txId,
+                'rt_connection' => 'service_order'
             ]
         ]);
             $txId2 = RT::beginTransaction();
@@ -171,8 +186,9 @@ class ServiceTest extends TestCase
                     'status' => $status,
                 ],
                 'headers' => [
-                    'transact_id' => $txId2,
-                    'transact_connection' => 'service_order'
+                    'rt_request_id' => session_create_id(),
+                    'rt_transact_id' => $txId2,
+                    'rt_connection' => 'service_order'
                 ]
             ]);
 
@@ -183,8 +199,9 @@ class ServiceTest extends TestCase
                         'status' => $status,
                     ],
                     'headers' => [
-                        'transact_id' => $txId3,
-                        'transact_connection' => 'service_order'
+                        'rt_request_id' => session_create_id(),
+                        'rt_transact_id' => $txId3,
+                        'rt_connection' => 'service_order'
                     ]
                 ]);
 
@@ -193,8 +210,9 @@ class ServiceTest extends TestCase
                         'status' => $status,
                     ],
                     'headers' => [
-                        'transact_id' => $txId3,
-                        'transact_connection' => 'service_order'
+                        'rt_request_id' => session_create_id(),
+                        'rt_transact_id' => $txId3,
+                        'rt_connection' => 'service_order'
                     ]
                 ]);
                 $resArr = $this->responseToArray($response);
@@ -212,7 +230,7 @@ class ServiceTest extends TestCase
                 'status' => $status,
             ],
             'headers' => [
-                'transact_connection' => 'service_order'
+                'rt_connection' => 'service_order'
             ]
         ]);
         $resArr = $this->responseToArray($response);
@@ -220,84 +238,9 @@ class ServiceTest extends TestCase
         $this->assertTrue($resArr['total'] == 1);
     }
 
-    public function testCreateOrdersCommit()
-    {
-        $transactId = RT::beginTransaction();
-
-        ResetOrderModel::create([
-            'order_no' => rand(1000, 9999),
-            'stock_qty' => 0,
-            'amount' => 0
-        ]);
-        
-        // 请求账户服务，减金额
-        $response = $this->client->post('/api/resetAccountUser/createOrdersRollback', [
-            'headers' => [
-                'transact_id' => $transactId,
-                'transact_connection' => 'service_account'
-            ]
-        ]);
-        $resArr = $this->responseToArray($response);
-
-        $this->assertTrue($resArr['total'] == 1);
-
-        RT::commit();
-    }
-
-    public function testCreateOrdersRollback()
-    {
-        $transactId = RT::beginTransaction();
-        
-        // 请求账户服务，减金额
-        $response = $this->client->post('/api/resetAccountUser/createOrdersCommit', [
-            'headers' => [
-                'transact_id' => $transactId,
-                'transact_connection' => 'service_account'
-            ]
-        ]);
-        $resArr = $this->responseToArray($response);
-
-        $this->assertTrue($resArr['total'] == 1);
-
-        RT::rollBack();
-    }
-
     private function responseToArray($response)
     {
         $contents = $response->getBody()->getContents();
         return json_decode($contents, true);
-    }
-
-    public function testCheckResult()
-    {
-        RT::beginTransaction();
-        DB::beginTransaction();
-        DB::table('reset_order')->setCheckResult(true)->where('id', 1)->update(['stock_qty' => 110]);
-        DB::commit();
-        RT::commit();
-
-        $this->assertTrue(true);
-    }
-
-    public function testLogCommit()
-    {
-        DB::beginTransaction();
-        $transactId = '6abtl2inkilkvus7bftjhdi8nt';
-        
-        $sqlCollects = DB::table('reset_transaction')->where('transact_id', 'like', $transactId . '%')->get();
-            if ($sqlCollects->count() > 0) {
-                foreach ($sqlCollects as $item) {
-                    if ($item->transact_status != RT::STATUS_ROLLBACK) {
-                        $result = DB::affectingStatement($item->sql);
-                        if ($item->check_result && $result != $item->result) {
-                            var_dump("db had been changed by anothor transact_id");
-                        }
-                    }
-                }
-            }
-
-        DB::commit();
-
-        $this->assertTrue(true);
     }
 }

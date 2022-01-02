@@ -105,7 +105,7 @@ class ResetAccountController extends Controller
             ],
             'headers' => [
                 'transact_id' => $transactId,
-                'transact_connection' => 'service_order'
+                'rt_connection' => 'service_order'
             ]
         ]);
 
@@ -115,7 +115,7 @@ class ResetAccountController extends Controller
             ],
             'headers' => [
                 'transact_id' => $transactId,
-                'transact_connection' => 'service_storage'
+                'rt_connection' => 'service_storage'
             ]
         ]);
 
@@ -149,17 +149,17 @@ class ResetAccountController extends Controller
             ],
             'headers' => [
                 'transact_id' => $transactId,
-                'transact_connection' => 'service_order'
+                'rt_connection' => 'service_order'
             ]
         ]);
 
-        $client->put('/api/resetStorageUser/updateWithCommit/1', [
+        $client->put('/api/resetStorageTest/updateWithCommit/1', [
             'json' => [
                 'decr_stock_qty' => 1
             ],
             'headers' => [
                 'transact_id' => $transactId,
-                'transact_connection' => 'service_storage'
+                'rt_connection' => 'service_storage'
             ]
         ]);
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ResetOrderModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ResetOrderController extends Controller
 {
@@ -74,5 +75,24 @@ class ResetOrderController extends Controller
         $item = ResetOrderModel::findOrFail($id);
         $ret = $item->delete();
         return ['result' => $ret];
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function createWithTimeout(Request $request)
+    {
+        $requestId = $request->header('rt_request_id');
+        $cache = Cache::store('file');
+        $cache->increment($requestId);
+        $times = $cache->get($requestId);
+        if ($times < 4) {
+            sleep(13);
+        }
+
+        return ResetOrderModel::create($request->input());
     }
 }

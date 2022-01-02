@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static void middlewareRollback()
  * @method static void middlewareBeginTransaction(string $transactId)
  * @method static void saveQuery(string $query, array $bindings, int $result, bool $checkResult)
+ * 
+ * @see \Laravel\ResetTransaction\Facades\ResetTransaction
  *
  */
 class RT extends Facade
