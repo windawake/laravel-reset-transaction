@@ -251,11 +251,10 @@ class ResetTransaction
         }
     }
 
-    public function saveQuery($query, $bindings, $result, $checkResult)
+    public function saveQuery($query, $bindings, $result, $checkResult, $keyName = null, $id = null)
     {
-        $connection = DB::connection();
         $rtTransactId = $this->getTransactId();
-        if ($rtTransactId && $query && !strpos($query, 'reset_transaction')) {
+        if ($rtTransactId && $query && !strpos($query, 'reset_transact')) {
             $subString = strtolower(substr(trim($query), 0, 12));
             $actionArr = explode(' ', $subString);
             $action = $actionArr[0];
@@ -266,23 +265,19 @@ class ResetTransaction
             if (in_array($action, ['insert', 'update', 'delete', 'set', 'savepoint', 'rollback'])) {
                 $backupSql = $completeSql;
                 if ($action == 'insert') {
-                    $lastId = $connection->getPdo()->lastInsertId();
+                    // if only queryBuilder insert or batch insert then return false
+                    if (is_null($id)) {
+                        return false;
+                    }
                     // extract variables from sql
                     preg_match("/insert into (.+) \((.+)\) values \((.+)\)/", $backupSql, $match);
-                    $database = $connection->getConfig('database');
                     $table = $match[1];
                     $columns = $match[2];
                     $parameters = $match[3];
 
-                    $backupSql = function () use ($database, $table, $columns, $parameters, $lastId) {
-                        $columnItem = DB::selectOne('select column_name as `column_name` from information_schema.columns where table_schema = ? and table_name = ? and column_key="PRI"', [$database, trim($table, '`')]);
-                        $primaryKey = $columnItem->column_name;
-
-                        $columns = "`{$primaryKey}`, " . $columns;
-
-                        $parameters = "'{$lastId}', " . $parameters;
-                        return "insert into $table ($columns) values ($parameters)";
-                    };
+                    $columns = "`{$keyName}`, " . $columns;
+                    $parameters = "'{$id}', " . $parameters;
+                    $backupSql = "insert into $table ($columns) values ($parameters)";
                 }
 
                 $sqlItem = [

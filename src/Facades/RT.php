@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string getTransactId()
  * @method static void middlewareRollback()
  * @method static void middlewareBeginTransaction(string $transactId)
- * @method static void saveQuery(string $query, array $bindings, int $result, bool $checkResult)
+ * @method static void saveQuery(string $query, array $bindings, int $result, bool $checkResult, string $keyName = null, int $id = null)
  * 
  * @see \Laravel\ResetTransaction\Facades\ResetTransaction
  *

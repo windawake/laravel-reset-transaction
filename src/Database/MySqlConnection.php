@@ -3,9 +3,6 @@
 namespace Laravel\ResetTransaction\Database;
 
 use Illuminate\Database\MySqlConnection as DatabaseMySqlConnection;
-use Closure;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Laravel\ResetTransaction\Facades\RT;
 
 class MySqlConnection extends DatabaseMySqlConnection
@@ -29,23 +26,49 @@ class MySqlConnection extends DatabaseMySqlConnection
     }
 
     /**
-     * Run a SQL statement and log its execution context.
+     * Detect the return value when committing the transaction
+     *
+     * @return bool
+     */
+    public function getCheckResult()
+    {
+        return $this->checkResult;
+    }
+
+    /**
+     * Get the default query grammar instance.
+     *
+     * @return \Illuminate\Database\Query\Grammars\MySqlGrammar
+     */
+    protected function getDefaultQueryGrammar()
+    {
+        return $this->withTablePrefix(new MySqlGrammar);
+    }
+
+    /**
+     * Get the default post processor instance.
+     *
+     * @return \Illuminate\Database\Query\Processors\MySqlProcessor
+     */
+    protected function getDefaultPostProcessor()
+    {
+        return new MySqlProcessor;
+    }
+
+    /**
+     * Run an SQL statement and get the number of rows affected.
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @param  \Closure  $callback
-     * @return mixed
-     *
-     * @throws \Illuminate\Database\QueryException
+     * @return int
      */
-    protected function run($query, $bindings, Closure $callback)
+    public function affectingStatement($query, $bindings = [])
     {
-        $result = parent::run($query, $bindings, $callback);
+        $result = parent::affectingStatement($query, $bindings);
 
         RT::saveQuery($query, $bindings, $result, $this->checkResult);
-
         $this->checkResult = false;
-
+        
         return $result;
     }
 }

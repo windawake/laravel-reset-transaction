@@ -2,7 +2,6 @@
 
 namespace Laravel\ResetTransaction;
 
-use Illuminate\Database\Capsule\Manager;
 use Illuminate\Support\ServiceProvider;
 use Laravel\ResetTransaction\Middleware\DistributeTransact;
 use Laravel\ResetTransaction\Console\CreateExamples;
@@ -10,7 +9,6 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 use Laravel\ResetTransaction\Database\MySqlConnection;
 use Laravel\ResetTransaction\Facades\ResetTransaction;
-use Laravel\ResetTransaction\Database\MySqlGrammar;
 
 class ResetTransactionServiceProvider extends ServiceProvider
 {
@@ -51,7 +49,6 @@ class ResetTransactionServiceProvider extends ServiceProvider
         Connection::resolverFor('mysql', function ($connection, $database, $prefix, $config) {
             // Next we can initialize the connection.
             $connection = new MySqlConnection($connection, $database, $prefix, $config);
-            $connection->setQueryGrammar(new MySqlGrammar());
             return $connection;
         });
 
