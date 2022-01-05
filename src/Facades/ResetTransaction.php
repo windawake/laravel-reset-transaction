@@ -159,6 +159,10 @@ class ResetTransaction
     {
         $sqlArr = session()->get('rt_transact_sql');
         $requestId = session()->get('rt_request_id');
+        if (is_null($requestId)) {
+            $requestId = $this->transactIdArr[0];
+        }
+        
         if ($sqlArr) {
             foreach ($sqlArr as $item) {
                 DB::table('reset_transact')->insert([
@@ -269,15 +273,18 @@ class ResetTransaction
                     if (is_null($id)) {
                         return false;
                     }
-                    // extract variables from sql
-                    preg_match("/insert into (.+) \((.+)\) values \((.+)\)/", $backupSql, $match);
-                    $table = $match[1];
-                    $columns = $match[2];
-                    $parameters = $match[3];
 
-                    $columns = "`{$keyName}`, " . $columns;
-                    $parameters = "'{$id}', " . $parameters;
-                    $backupSql = "insert into $table ($columns) values ($parameters)";
+                    if (!strpos($query, "`{$keyName}`")) {
+                        // extract variables from sql
+                        preg_match("/insert into (.+) \((.+)\) values \((.+)\)/", $backupSql, $match);
+                        $table = $match[1];
+                        $columns = $match[2];
+                        $parameters = $match[3];
+
+                        $columns = "`{$keyName}`, " . $columns;
+                        $parameters = "'{$id}', " . $parameters;
+                        $backupSql = "insert into $table ($columns) values ($parameters)";
+                    }
                 }
 
                 $sqlItem = [
