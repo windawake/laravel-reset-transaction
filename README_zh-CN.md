@@ -163,7 +163,7 @@ class ServiceTest extends TestCase
 ## 个人笔记
 我之前写了[laravel快速服务化包](https://learnku.com/articles/61638 "laravel快速服务化包")，但是它没有解决数据一致性的问题。尝试用XA，但是XA只能解决单机多个数据库，没法解决多台机器服务化的问题。然后我又尝试去研究tcc和seata，但是看完后一脸懵逼，不知所措。无奈被逼上绝路，没办法了只能自创分布式事务解决方案。一直以来，我一直以为单单只用mysql是没法解决分布式事务的问题，现在终于明白，还是有办法滴！
 
-![](https://cdn.learnku.com/uploads/images/202112/30/46914/zWUIoVkFmb.jpg!large)
+![](https://cdn.learnku.com/uploads/images/202201/06/46914/7bFo5E0okb.jpg!large)
 
 希望有更多的朋友相互学习和一起研究分布式事务的知识。
 ## 相关资源
