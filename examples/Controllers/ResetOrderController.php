@@ -156,7 +156,7 @@ class ResetOrderController extends Controller
         RT::commit();
     }
 
-    public function createWithLocal(Request $request)
+    public function orderWithLocal(Request $request)
     {
         DB::beginTransaction();
         usleep(rand(1, 200) * 1000);
@@ -164,15 +164,17 @@ class ResetOrderController extends Controller
         $stockQty = rand(1, 5);
         $amount = rand(1, 50)/10;
 
-        ResetOrderModel::create([
+        $item = ResetOrderModel::create([
             'order_no' => $orderNo,
             'stock_qty' => $stockQty,
             'amount' => $amount
         ]);
+
+        $item->increment('stock_qty');
         DB::commit();
     }
 
-    public function createWithRt(Request $request)
+    public function orderWithRt(Request $request)
     {
         RT::beginTransaction();
         usleep(rand(1, 200) * 1000);
@@ -180,11 +182,75 @@ class ResetOrderController extends Controller
         $stockQty = rand(1, 5);
         $amount = rand(1, 50)/10;
 
-        ResetOrderModel::create([
+        $item = ResetOrderModel::create([
             'order_no' => $orderNo,
             'stock_qty' => $stockQty,
             'amount' => $amount
         ]);
+
+        $item->increment('stock_qty');
+        RT::commit();
+    }
+
+    public function disorderWithLocal()
+    {
+        DB::beginTransaction();
+        usleep(rand(1, 200) * 1000);
+        $orderNo = session_create_id();
+        $stockQty = rand(1, 5);
+        $amount = rand(1, 50)/10;
+        $status = rand(1, 3);
+
+        $item = ResetOrderModel::updateOrCreate([
+            'id' => rand(1, 10),
+        ], [
+            'order_no' => $orderNo,
+            'stock_qty' => $stockQty,
+            'amount' => $amount,
+            'status' => $status,
+        ]);
+
+
+        $item = ResetOrderModel::find(rand(1,10));
+        if ($item) {
+            $item->delete();
+        }
+
+        if (rand(0,1) == 0) {
+            ResetOrderModel::where('status', $status)->update(['stock_qty' => rand(1, 5)]);
+        }
+
+        DB::commit();
+    }
+
+    public function disorderWithRt()
+    {
+        RT::beginTransaction();
+        usleep(rand(1, 200) * 1000);
+        $orderNo = session_create_id();
+        $stockQty = rand(1, 5);
+        $amount = rand(1, 50)/10;
+        $status = rand(1, 3);
+
+        $item = ResetOrderModel::updateOrCreate([
+            'id' => rand(1, 10),
+        ], [
+            'order_no' => $orderNo,
+            'stock_qty' => $stockQty,
+            'amount' => $amount,
+            'status' => $status,
+        ]);
+
+
+        $item = ResetOrderModel::find(rand(1,10));
+        if ($item) {
+            $item->delete();
+        }
+
+        if (rand(0,1) == 0) {
+            ResetOrderModel::where('status', $status)->update(['stock_qty' => rand(1, 5)]);
+        }
+
         RT::commit();
     }
 }

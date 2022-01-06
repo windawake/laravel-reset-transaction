@@ -5,9 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\ResetStorageModel;
 use Illuminate\Http\Request;
 use Laravel\ResetTransaction\Facades\RT;
+use Illuminate\Support\Facades\DB;
 
 class ResetStorageController extends Controller
 {
+    public function __construct()
+    {
+        DB::setDefaultConnection('service_storage');
+    }
+
     /**
      * Display a listing of the resource.
      *

@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\ResetAccountModel;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Laravel\ResetTransaction\Facades\RT;
 use GuzzleHttp\Client;
 
 class ResetAccountController extends Controller
 {
+
+    public function __construct()
+    {
+        DB::setDefaultConnection('service_account');
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -89,41 +95,47 @@ class ResetAccountController extends Controller
      */
     public function createOrdersCommit()
     {
-        $baseUri = 'http://127.0.0.1:8001';
         $client = new Client([
-            'base_uri' => $baseUri,
-            'timeout' => 60,
+            'timeout' => 30,
         ]);
-
+        $orderNo = session_create_id();
+        $stockQty = rand(1, 5);
+        $amount = rand(1, 50)/10;
         $transactId = RT::beginTransaction();
         
-        $client->post('/api/resetOrder', [
+        $client->post('http://127.0.0.1:8003/api/resetOrder', [
             'json' => [
-                'order_no' => rand(1000, 9999),
-                'stock_qty' => 1,
-                'amount' => 4
+                'order_no' => $orderNo,
+                'stock_qty' => $stockQty,
+                'amount' => $amount
             ],
             'headers' => [
-                'transact_id' => $transactId,
+                'rt_request_id' => session_create_id(),
+                'rt_transact_id' => $transactId,
                 'rt_connection' => 'service_order'
             ]
         ]);
 
-        $client->put('/api/resetStorage/1', [
+        $response = $client->put('http://127.0.0.1:8004/api/resetStorage/1', [
             'json' => [
-                'decr_stock_qty' => 1
+                'decr_stock_qty' => $stockQty
             ],
             'headers' => [
-                'transact_id' => $transactId,
+                'rt_request_id' => session_create_id(),
+                'rt_transact_id' => $transactId,
                 'rt_connection' => 'service_storage'
             ]
         ]);
 
-        ResetAccountModel::where('amount', '>', 4)->decrement('amount', 4);
+        $resArr = json_decode($response->getBody()->getContents(), true);
+
+        $rowCount = ResetAccountModel::setCheckResult(true)->where('id', 1)->where('amount', '>', $amount)->decrement('amount', $amount);
+
+        $result = $resArr['result'] && $rowCount>0;
 
         RT::commit();
 
-        return ['total' => 1];
+        return ['result' => $result];
     }
 
     /**
@@ -133,40 +145,42 @@ class ResetAccountController extends Controller
      */
     public function createOrdersRollback()
     {
-        $baseUri = 'http://127.0.0.1:8001';
         $client = new Client([
-            'base_uri' => $baseUri,
-            'timeout' => 60,
+            'timeout' => 30,
         ]);
-
+        $orderNo = session_create_id();
+        $stockQty = rand(1, 5);
+        $amount = rand(1, 50)/10;
         $transactId = RT::beginTransaction();
         
-        $client->post('/api/resetOrder', [
+        $client->post('http://127.0.0.1:8003/api/resetOrder', [
             'json' => [
-                'order_no' => rand(1000, 9999),
-                'stock_qty' => 1,
-                'amount' => 3
+                'order_no' => $orderNo,
+                'stock_qty' => $stockQty,
+                'amount' => $amount
             ],
             'headers' => [
-                'transact_id' => $transactId,
+                'rt_request_id' => session_create_id(),
+                'rt_transact_id' => $transactId,
                 'rt_connection' => 'service_order'
             ]
         ]);
 
-        $client->put('/api/resetStorageTest/updateWithCommit/1', [
+        $client->put('http://127.0.0.1:8004/api/resetStorageTest/updateWithCommit/1', [
             'json' => [
-                'decr_stock_qty' => 1
+                'decr_stock_qty' => $stockQty
             ],
             'headers' => [
-                'transact_id' => $transactId,
+                'rt_request_id' => session_create_id(),
+                'rt_transact_id' => $transactId,
                 'rt_connection' => 'service_storage'
             ]
         ]);
 
-        ResetAccountModel::where('amount', '>', 3)->decrement('amount', 3);
+        ResetAccountModel::setCheckResult(true)->where('id', 1)->where('amount', '>', $amount)->decrement('amount', $amount);
 
         RT::rollBack();
 
-        return ['total' => 1];
+        return ['result' => false];
     }
 }

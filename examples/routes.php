@@ -16,9 +16,12 @@ Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function
     Route::post('/resetOrderTest/createWithTimeout', [\App\Http\Controllers\ResetOrderController::class, 'createWithTimeout']);
 
     // ab test
+    Route::put('/resetOrderTest/updateOrCreate/{id}', [\App\Http\Controllers\ResetOrderController::class, 'updateOrCreate']);
     Route::get('/resetOrderTest/deadlockWithLocal', [\App\Http\Controllers\ResetOrderController::class, 'deadlockWithLocal']);
     Route::get('/resetOrderTest/deadlockWithRt', [\App\Http\Controllers\ResetOrderController::class, 'deadlockWithRt']);
-    Route::get('/resetOrderTest/createWithLocal', [\App\Http\Controllers\ResetOrderController::class, 'createWithLocal']);
-    Route::get('/resetOrderTest/createWithRt', [\App\Http\Controllers\ResetOrderController::class, 'createWithRt']);
-    Route::put('/resetOrderTest/updateOrCreate/{id}', [\App\Http\Controllers\ResetOrderController::class, 'updateOrCreate']);
+
+    Route::get('/resetOrderTest/orderWithLocal', [\App\Http\Controllers\ResetOrderController::class, 'orderWithLocal']);
+    Route::get('/resetOrderTest/orderWithRt', [\App\Http\Controllers\ResetOrderController::class, 'orderWithRt']);
+    Route::get('/resetOrderTest/disorderWithLocal', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithLocal']);
+    Route::get('/resetOrderTest/disorderWithRt', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithRt']);
 });

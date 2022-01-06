@@ -17,7 +17,7 @@ use GuzzleHttp\Exception\ConnectException;
 
 class SubNestTest extends TestCase
 {
-    private $baseUri = 'http://127.0.0.1:8001';
+    private $baseUri = 'http://127.0.0.1:8000';
 
     /**
      * Client
@@ -60,7 +60,7 @@ class SubNestTest extends TestCase
         ]);
         $resArr = $this->responseToArray($response);
 
-        $this->assertTrue($resArr['total'] == 1);
+        $this->assertTrue($resArr['result']);
 
         RT::commit();
     }
@@ -79,7 +79,7 @@ class SubNestTest extends TestCase
         ]);
         $resArr = $this->responseToArray($response);
 
-        $this->assertTrue($resArr['total'] == 1);
+        $this->assertTrue($resArr['result']);
 
         RT::rollBack();
     }
