@@ -35,7 +35,7 @@ OK (3 tests, 12 assertions)
 4. Support distributed transaction nesting, consistent with savepoint.
 5. Support to avoid the problem of dirty data caused by the concurrency of different business codes.
 6. The service-oriented interface of the http protocol is supported by default. If you want to support other protocols, you need to rewrite the middleware.
-7. <a href="#support for nested distributed transactions of sub-services (world's first)">Support for nested distributed transactions of sub-services (world's first)</a>.
+7. <a href="#support-sub-service-nested-distributed-transaction-worlds-first">Support for nested distributed transactions of sub-services (world's first)</a>.
 8. Support services, mixed nesting of local transactions and distributed transactions (the world's first)
 9. Support 3 retries over time, repeated requests to ensure idempotence
 10. Support go, java language (under development)
