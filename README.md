@@ -86,8 +86,8 @@ class ServiceTest extends TestCase
             'base_uri' => $this->baseUri,
             'timeout' => 60,
         ]);
-		$requestId = session_create_id();
-		session()->put('rt_request_id', $requestId);
+	$requestId = session_create_id();
+	session()->put('rt_request_id', $requestId);
     }
 
     public function testCreateOrderWithCommit()
@@ -95,7 +95,7 @@ class ServiceTest extends TestCase
         $orderCount1 = ResetOrderModel::count();
         $storageItem1 = ResetStorageModel::find(1);
         $accountItem1 = ResetAccountModel::find(1);
-		// 开启RT模式分布式事务
+	// 开启RT模式分布式事务
         $transactId = RT::beginTransaction();
         $orderNo = rand(1000, 9999); // 随机订单号
         $stockQty = 2; // 占用2个库存数量
@@ -107,7 +107,7 @@ class ServiceTest extends TestCase
             'amount' => $amount
         ]);
         // 请求库存服务，减库存
-		$requestId = session_create_id();
+	$requestId = session_create_id();
         $response = $this->client->put('/api/resetStorage/1', [
             'json' => [
                 'decr_stock_qty' => $stockQty
@@ -121,7 +121,7 @@ class ServiceTest extends TestCase
         $resArr1 = $this->responseToArray($response);
         $this->assertTrue($resArr1['result'] == 1, 'lack of stock'); //返回值是1，说明操作成功
         // 请求账户服务，减金额
-		$requestId = session_create_id();
+	$requestId = session_create_id();
         $response = $this->client->put('/api/resetAccount/1', [
             'json' => [
                 'decr_amount' => $amount
@@ -134,7 +134,7 @@ class ServiceTest extends TestCase
         ]);
         $resArr2 = $this->responseToArray($response);
         $this->assertTrue($resArr2['result'] == 1, 'not enough money'); //返回值是1，说明操作成功
-		// 提交RT模式分布式事务
+	// 提交RT模式分布式事务
         RT::commit();
 
         $orderCount2 = ResetOrderModel::count();
