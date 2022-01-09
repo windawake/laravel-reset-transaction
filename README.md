@@ -1,5 +1,5 @@
 # laravel-reset-transaction
-[![中文文档](https://shields.io/static/v1?label=zh-cn&message=%E4%B8%AD%E6%96%87&color=red)](https://github.com/windawake/laravel-reset-transaction/blob/master/README_zh-CN.md)
+[![中文文档](https://shields.io/static/v1?label=zh-cn&message=中文文档&color=red)](https://github.com/windawake/laravel-reset-transaction/blob/master/README_zh-CN.md)
 
 distributed transaction for call remote api service
 
