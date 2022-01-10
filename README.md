@@ -158,6 +158,6 @@ class ServiceTest extends TestCase
 ## Contact
 
 
-![](https://cdn.learnku.com/uploads/images/202201/06/46914/7bFo5E0okb.jpg!large)
+![](https://cdn.learnku.com/uploads/images/202201/10/46914/4DTLHADYyN.png!large)
 
 I hope that more friends will learn from each other and study the knowledge of distributed transactions together.
