@@ -2,7 +2,7 @@
 
 return [
     'rt' => [
-        'mode' => env('RT_MODE', 'sync'), // sync async
+        'mode' => env('RT_MODE', 'async'), // sync async
         'num_coroutine' =>  env('RT_NUM_COROUTINE', 10),
     ],
     'connections' => [
