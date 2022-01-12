@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'rt' => [
+        'mode' => env('RT_MODE', 'sync'), // sync async
+        'num_coroutine' =>  env('RT_NUM_COROUTINE', 10),
+    ],
     'connections' => [
         'service_order' => [
             'driver' => 'mysql',

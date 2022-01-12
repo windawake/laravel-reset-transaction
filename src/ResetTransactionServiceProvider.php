@@ -7,6 +7,7 @@ use Laravel\ResetTransaction\Middleware\DistributeTransact;
 use Laravel\ResetTransaction\Console\CreateExamples;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
+use Laravel\ResetTransaction\Console\AsyncCommit;
 use Laravel\ResetTransaction\Database\MySqlConnection;
 use Laravel\ResetTransaction\Facades\ResetTransaction;
 
@@ -38,13 +39,21 @@ class ResetTransactionServiceProvider extends ServiceProvider
             }
         );
 
+        $this->app->singleton(
+            'command.resetTransact:async-commit',
+            function ($app) {
+                return new AsyncCommit();
+            }
+        );
+
         $this->app->singleton('rt', function($app){
             return new ResetTransaction();
         });
 
-        $this->commands(
-            'command.resetTransact.create-examples'
-        );
+        $this->commands([
+            'command.resetTransact.create-examples',
+            'command.resetTransact:async-commit',
+        ]);
 
         Connection::resolverFor('mysql', function ($connection, $database, $prefix, $config) {
             // Next we can initialize the connection.

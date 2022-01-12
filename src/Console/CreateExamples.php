@@ -92,6 +92,7 @@ class CreateExamples extends Command
     private function addTableToDatabase()
     {
         $transactTable = 'reset_transact';
+        $transactActTable = 'reset_transact_act';
         $transactReqTable = 'reset_transact_req';
         $orderTable = 'reset_order';
         $storageTable = 'reset_storage';
@@ -103,13 +104,13 @@ class CreateExamples extends Command
 
         $serviceMap = [
             $orderService => [
-                $transactTable, $transactReqTable, $orderTable
+                $transactTable, $transactActTable, $transactReqTable, $orderTable
             ],
             $storageService => [
-                $transactTable, $transactReqTable, $storageTable
+                $transactTable, $transactActTable, $transactReqTable, $storageTable
             ],
             $accountService => [
-                $transactTable, $transactReqTable, $accountTable
+                $transactTable, $transactActTable, $transactReqTable, $accountTable
             ]
         ];
 
@@ -136,6 +137,19 @@ class CreateExamples extends Command
                         $table->dateTime('created_at')->useCurrent();
                         $table->index('request_id');
                         $table->index('transact_id');
+                    });
+                }
+
+                if ($table == $transactActTable) {
+                    $fullTable = $service . '.' . $transactActTable;
+                    Schema::dropIfExists($fullTable);
+                    Schema::create($fullTable, function (Blueprint $table) {
+                        $table->bigIncrements('id');
+                        $table->string('transact_id', 32);
+                        $table->tinyInteger('action')->default(0);
+                        $table->text('transact_rollback');
+                        $table->dateTime('created_at')->useCurrent();
+                        $table->unique('transact_id');
                     });
                 }
 

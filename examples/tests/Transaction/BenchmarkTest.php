@@ -108,9 +108,38 @@ class BenchmarkTest extends TestCase
         $stockQty1 = ResetStorageModel::where('id', 1)->value('stock_qty');
 
         $dataPath = __DIR__.'/data.txt';
-        $shellOne = "ab -n 12 -c 4 -p '{$dataPath}' {$this->urlOne}/resetAccountTest/createOrdersCommit";
+        $shellOne = "ab -n 36 -c 12 -p '{$dataPath}' {$this->urlOne}/resetAccountTest/createOrdersCommit";
         $shellTwo = "ab -n 12 -c 4  -p '{$dataPath}' {$this->urlTwo}/resetAccountTest/createOrdersCommit";
         $shellThree = "ab -n 12 -c 4  -p '{$dataPath}' {$this->urlThree}/resetAccountTest/createOrdersCommit";
+
+        $shell = sprintf("%s & %s & %s", $shellOne, $shellTwo, $shellThree);
+        $shell = $shellOne;
+        exec($shell, $output, $resultCode);
+
+        $amount2 = ResetAccountModel::where('id', 1)->value('amount');
+        $stockQty2 = ResetStorageModel::where('id', 1)->value('stock_qty');
+
+        $amountSum = ResetOrderModel::sum('amount');
+        $stockQtySum = ResetOrderModel::sum('stock_qty');
+        $total = ResetOrderModel::count();
+
+        $this->assertTrue($total == 36);
+        $this->assertTrue(abs($amount1 - $amount2 - $amountSum) < 0.001);
+        $this->assertTrue(($stockQty1 - $stockQty2) == $stockQtySum);
+
+    }
+
+    public function testBatchCreate06()
+    {
+        ResetOrderModel::truncate();
+
+        $amount1 = ResetAccountModel::where('id', 1)->value('amount');
+        $stockQty1 = ResetStorageModel::where('id', 1)->value('stock_qty');
+
+        $dataPath = __DIR__.'/data.txt';
+        $shellOne = "ab -n 12 -c 4 -p '{$dataPath}' {$this->urlOne}/resetAccountTest/createOrdersCommitLocal";
+        $shellTwo = "ab -n 12 -c 4  -p '{$dataPath}' {$this->urlOne}/resetAccountTest/createOrdersCommitLocal";
+        $shellThree = "ab -n 12 -c 4  -p '{$dataPath}' {$this->urlOne}/resetAccountTest/createOrdersCommitLocal";
 
         $shell = sprintf("%s & %s & %s", $shellOne, $shellTwo, $shellThree);
         exec($shell, $output, $resultCode);

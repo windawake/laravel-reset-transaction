@@ -22,6 +22,14 @@ class RT extends Facade
     const STATUS_START = 0;
     const STATUS_COMMIT = 1;
     const STATUS_ROLLBACK = 2;
+
+    const ACTION_CREATE = 0;
+    const ACTION_WAIT_COMMIT = 10;
+    const ACTION_PREPARE_COMMIT = 11;
+    const ACTION_FINISH_COMMIT = 12;
+    const ACTION_WAIT_ROLLBACK = 20;
+    const ACTION_PREPARE_ROLLBACK = 21;
+    const ACTION_FINISH_ROLLBACK = 22;
     
     /**
      * Get the registered name of the component.

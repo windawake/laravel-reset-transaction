@@ -24,4 +24,6 @@ Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function
     Route::get('/resetOrderTest/orderWithRt', [\App\Http\Controllers\ResetOrderController::class, 'orderWithRt']);
     Route::get('/resetOrderTest/disorderWithLocal', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithLocal']);
     Route::get('/resetOrderTest/disorderWithRt', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithRt']);
+
+    Route::post('/resetAccountTest/createOrdersCommitLocal', [\App\Http\Controllers\ResetAccountController::class, 'createOrdersCommitLocal']);
 });

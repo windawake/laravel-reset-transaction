@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ResetAccountModel;
+use App\Models\ResetOrderModel;
+use App\Models\ResetStorageModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Laravel\ResetTransaction\Facades\RT;
@@ -136,6 +138,29 @@ class ResetAccountController extends Controller
         RT::commit();
 
         return ['result' => $result];
+    }
+
+    public function createOrdersCommitLocal()
+    {
+
+        $orderNo = session_create_id();
+        $stockQty = rand(1, 5);
+        $amount = rand(1, 50)/10;
+        DB::beginTransaction();
+
+        ResetOrderModel::create([
+            'order_no' => $orderNo,
+            'stock_qty' => $stockQty,
+            'amount' => $amount
+        ]);
+
+        ResetStorageModel::where('id', 1)->decrement($stockQty);
+
+        ResetAccountModel::setCheckResult(true)->where('id', 1)->where('amount', '>', $amount)->decrement('amount', $amount);
+
+        DB::commit();
+
+        return ['result' => true];
     }
 
     /**
