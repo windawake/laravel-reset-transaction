@@ -48,7 +48,6 @@ class AsyncCommit extends Command
      */
     public function handle()
     {
-        Log::info("hello rt");
         $mode = config('rt_database.rt.mode');
         if ($mode == 'async') {
             $num = config('rt_database.rt.num_coroutine');
@@ -74,8 +73,6 @@ class AsyncCommit extends Command
 
                                 throw $ex;
                             }
-                            
-                    
                         });
                     }
                 });
@@ -109,6 +106,10 @@ class AsyncCommit extends Command
         }
 
         RT::xaCommit($xidArr);
+
+        DB::table('reset_transact_act')->where('transact_id', $transactId)->update([
+            'action' => RT::ACTION_FINISH_COMMIT
+        ]);
         
     }
 
