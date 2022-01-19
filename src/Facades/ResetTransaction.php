@@ -12,7 +12,7 @@ class ResetTransaction
 
     public function beginTransaction()
     {
-        DB::beginTransaction();
+        $this->stmtBegin();
 
         $transactId = session_create_id();
         array_push($this->transactIdArr, $transactId);
@@ -22,7 +22,7 @@ class ResetTransaction
 
     public function commit()
     {
-        DB::rollBack();
+        $this->stmtRollback();
 
         if (count($this->transactIdArr) > 1) {
             array_pop($this->transactIdArr);
@@ -65,7 +65,7 @@ class ResetTransaction
         $transactIdArr = explode('-', $transactId);
         $sqlArr = DB::table('reset_transact')->where('transact_id', 'like', $transactIdArr[0].'%')->whereIn('transact_status', [RT::STATUS_START, RT::STATUS_COMMIT])->pluck('sql')->toArray();
         $sql = implode(';', $sqlArr);
-        DB::beginTransaction();
+        $this->stmtBegin();
         if ($sqlArr) {
             DB::unprepared($sql);
         }
@@ -75,8 +75,7 @@ class ResetTransaction
 
     public function middlewareRollback()
     {
-
-        DB::rollBack();
+        $this->stmtRollback();
         $this->logRT(RT::STATUS_COMMIT);
 
         if ($this->transactRollback) {
@@ -96,7 +95,7 @@ class ResetTransaction
 
     public function rollBack()
     {
-        DB::rollBack();
+        $this->stmtRollback();
 
         if (count($this->transactIdArr) > 1) {
             $transactId = $this->getTransactId();
@@ -122,6 +121,38 @@ class ResetTransaction
 
         $this->xaCommit($xidArr);
         $this->removeRT();
+    }
+
+    public function commitTest()
+    {
+        $this->stmtRollback();
+
+        if (count($this->transactIdArr) > 1) {
+            array_pop($this->transactIdArr);
+
+            return true;
+        }
+
+        $this->logRT(RT::STATUS_COMMIT);
+    }
+
+    public function rollBackTest()
+    {
+        $this->stmtRollback();
+
+        if (count($this->transactIdArr) > 1) {
+            $transactId = $this->getTransactId();
+            foreach ($this->transactRollback as $i => $txId) {
+                if (strpos($txId, $transactId) === 0) {
+                    unset($this->transactRollback[$i]);
+                }
+            }
+            array_push($this->transactRollback, $transactId);
+            array_pop($this->transactIdArr);
+            return true;
+        }
+
+        $this->logRT(RT::STATUS_ROLLBACK);
     }
 
     public function setTransactId($transactId)
@@ -155,7 +186,7 @@ class ResetTransaction
         return $xidArr;
     }
 
-    private function logRT($status)
+    public function logRT($status)
     {
         $sqlArr = session()->get('rt_transact_sql');
         $requestId = session()->get('rt_request_id');
@@ -297,5 +328,19 @@ class ResetTransaction
             }
 
         }
+    }
+
+    private function stmtBegin()
+    {
+        session()->put('rt_stmt', 'begin');
+        DB::beginTransaction();
+        session()->remove('rt_stmt', 'begin');
+    }
+
+    private function stmtRollback()
+    {
+        session()->put('rt_stmt', 'rollback');
+        DB::rollBack();
+        session()->remove('rt_stmt', 'rollback');
     }
 }

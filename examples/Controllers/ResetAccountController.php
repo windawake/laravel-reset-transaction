@@ -181,6 +181,6 @@ class ResetAccountController extends Controller
 
         RT::rollBack();
 
-        return ['result' => false];
+        return ['result' => true];
     }
 }

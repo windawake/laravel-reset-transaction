@@ -25,3 +25,30 @@ Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function
     Route::get('/resetOrderTest/disorderWithLocal', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithLocal']);
     Route::get('/resetOrderTest/disorderWithRt', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithRt']);
 });
+
+Route::prefix('api')->middleware('api')->group(function () {
+    Route::post('/resetTransaction/rollback', function () {
+        $transactId = request('transact_id');
+        $code = 1;
+        DB::transaction(function () use ($transactId) {
+            DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
+        });
+
+        return ['code' => $code, 'transactId' => $transactId];
+    });
+
+    Route::post('/resetTransaction/commit', function () {
+        $transactId = request('transact_id');
+        $code = 1;
+        $list = DB::table('reset_transaction')->where('transact_id', $transactId)->get();
+        DB::transaction(function () use ($list, $transactId) {
+            foreach ($list as $item) {
+                DB::unprepared($item->sql);
+            }
+
+            DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
+        });
+
+        return ['code' => $code, 'transact_id' => $transactId];
+    });
+});

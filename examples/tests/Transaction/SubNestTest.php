@@ -84,6 +84,23 @@ class SubNestTest extends TestCase
         RT::rollBack();
     }
 
+    public function testNestTransact()
+    {
+        RT::beginTransaction();
+        RT::beginTransaction();
+        RT::beginTransaction();
+
+        ResetOrderModel::create([
+            'order_no' => rand(1000, 9999),
+            'stock_qty' => 0,
+            'amount' => 0
+        ]);
+
+        RT::commit();
+        RT::commit();
+        RT::commit();
+    }
+
     private function responseToArray($response)
     {
         $contents = $response->getBody()->getContents();

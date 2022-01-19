@@ -17,7 +17,12 @@ class MySqlGrammar extends Grammar
     public function compileSavepoint($name)
     {
         $sql = 'SAVEPOINT '.$name;
-        RT::saveQuery($sql, [], 0, 0);
+        
+        $transactId = RT::getTransactId();
+        $stmt = session()->get('rt_stmt');
+        if ($transactId && is_null($stmt)) {
+            RT::saveQuery($sql, [], 0, 0);
+        }
 
         return $sql;
     }
@@ -31,7 +36,12 @@ class MySqlGrammar extends Grammar
     public function compileSavepointRollBack($name)
     {
         $sql = 'ROLLBACK TO SAVEPOINT '.$name;
-        RT::saveQuery($sql, [], 0, 0);
+
+        $transactId = RT::getTransactId();
+        $stmt = session()->get('rt_stmt');
+        if ($transactId && is_null($stmt)) {
+            RT::saveQuery($sql, [], 0, 0);
+        }
 
         return $sql;
     }

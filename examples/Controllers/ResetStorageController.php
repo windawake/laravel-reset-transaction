@@ -87,7 +87,7 @@ class ResetStorageController extends Controller
     public function updateWithCommit(Request $request, $id)
     {
         $item = ResetStorageModel::findOrFail($id);
-        RT::beginTransaction();
+        DB::beginTransaction();
 
         if ($request->has('decr_stock_qty')) {
             $decrQty = (float) $request->input('decr_stock_qty');
@@ -96,7 +96,7 @@ class ResetStorageController extends Controller
             $ret = $item->update($request->input());
         }
         
-        RT::commit();
+        DB::commit();
 
         return ['result' => $ret];
     }
