@@ -1,7 +1,7 @@
 # laravel-reset-transaction
 [![中文文档](https://shields.io/static/v1?label=zh-cn&message=中文文档&color=red)](https://github.com/windawake/laravel-reset-transaction/blob/master/README_zh-CN.md)
 
-distributed transaction for call remote api service
+RT (reset transaction) mode can be as distributed transaction for call remote api service
 
 ## Overview
 Install the version between laravel5.5-laravel8, and then install the composer package
