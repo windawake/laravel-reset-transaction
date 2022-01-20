@@ -2,6 +2,7 @@
 
 namespace Laravel\ResetTransaction\Facades;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
 use Laravel\ResetTransaction\Exception\ResetTransactionException;
 
@@ -32,11 +33,60 @@ class ResetTransaction
 
         $this->logRT(RT::STATUS_COMMIT);
 
-        
-        $xidArr = $this->getUsedXidArr();
+        $commitUrl = config('rt_database.center.commit_url');
+
+        $client = new Client();
+        $response = $client->post($commitUrl, [
+            'json' =>[
+                'transact_id' => $this->getTransactId(),
+                'transact_rollback' => $this->transactRollback,
+            ]
+        ]);
+
+        $this->removeRT();
+
+        return $response;
+    }
+
+    public function rollBack()
+    {
+        $this->stmtRollback();
+
+        if (count($this->transactIdArr) > 1) {
+            $transactId = $this->getTransactId();
+            foreach ($this->transactRollback as $i => $txId) {
+                if (strpos($txId, $transactId) === 0) {
+                    unset($this->transactRollback[$i]);
+                }
+            }
+            array_push($this->transactRollback, $transactId);
+            array_pop($this->transactIdArr);
+            return true;
+        }
+
+        $this->logRT(RT::STATUS_ROLLBACK);
+
+        $rollbackUrl = config('rt_database.center.rollback_url');
+
+        $client = new Client();
+        $response = $client->post($rollbackUrl, [
+            'json' =>[
+                'transact_id' => $this->getTransactId(),
+                'transact_rollback' => $this->transactRollback,
+            ]
+        ]);
+        $this->removeRT();
+
+        return $response;
+    }
+
+    
+    public function centerCommit($transactId, $transactRollback)
+    {        
+        $xidArr = $this->getUsedXidArr($transactId);
         $this->xaBeginTransaction($xidArr);
         foreach ($xidArr as $name => $xid) {
-            foreach ($this->transactRollback as $transactId) {
+            foreach ($transactRollback as $transactId) {
                 DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
             }
         }
@@ -53,6 +103,27 @@ class ResetTransaction
                     }
                 }
                 DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $this->getTransactId() . '%')->delete();
+            }
+        }
+
+        $this->xaCommit($xidArr);
+    }
+
+    public function centerRollback($transactId, $transactRollback)
+    {
+
+        $xidArr = $this->getUsedXidArr($transactId);
+        $this->xaBeginTransaction($xidArr);
+
+        if (strpos('-', $transactId)) {
+            foreach ($xidArr as $name => $xid) {
+                foreach ($transactRollback as $txId) {
+                    DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $txId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
+                }
+            }
+        } else {
+            foreach ($xidArr as $name => $xid) {
+                DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->delete();
             }
         }
 
@@ -79,47 +150,17 @@ class ResetTransaction
         $this->logRT(RT::STATUS_COMMIT);
 
         if ($this->transactRollback) {
-            $xidArr = $this->getUsedXidArr();
-            $this->xaBeginTransaction($xidArr);
-            foreach ($xidArr as $name => $xid) {
-                foreach ($this->transactRollback as $transactId) {
-                    DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
-                }
-            }
-    
-            $this->xaCommit($xidArr);
+            $rollbackUrl = config('rt_database.center.rollback_url');
+
+            $client = new Client();
+            $client->post($rollbackUrl, [
+                'json' =>[
+                    'transact_id' => $this->getTransactId(),
+                    'transact_rollback' => $this->transactRollback,
+                ]
+            ]);
         }
         
-        $this->removeRT();
-    }
-
-    public function rollBack()
-    {
-        $this->stmtRollback();
-
-        if (count($this->transactIdArr) > 1) {
-            $transactId = $this->getTransactId();
-            foreach ($this->transactRollback as $i => $txId) {
-                if (strpos($txId, $transactId) === 0) {
-                    unset($this->transactRollback[$i]);
-                }
-            }
-            array_push($this->transactRollback, $transactId);
-            array_pop($this->transactIdArr);
-            return true;
-        }
-
-        $this->logRT(RT::STATUS_ROLLBACK);
-
-        $xidArr = $this->getUsedXidArr();
-
-        $this->xaBeginTransaction($xidArr);
-
-        foreach ($xidArr as $name => $xid) {
-            DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $this->getTransactId() . '%')->delete();
-        }
-
-        $this->xaCommit($xidArr);
         $this->removeRT();
     }
 
@@ -171,12 +212,12 @@ class ResetTransaction
         return $this->transactRollback;
     }
 
-    private function getUsedXidArr()
+    private function getUsedXidArr($transactId)
     {
         $conList = config('rt_database.connections', []);
         $xidArr = [];
         foreach ($conList as $name => $config) {
-            $count = DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $this->getTransactId() . '%')->count();
+            $count = DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->count();
             if ($count > 0) {
                 $xid = session_create_id();
                 $xidArr[$name] = $xid;

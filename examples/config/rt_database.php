@@ -1,10 +1,10 @@
 <?php
 
 return [
-    'proxy' =>[
+    'center' =>[
         'mode' => env('RT_MODE', 'xa'), // xa, common
-        'commit_url' => 'http://127.0.0.1:8000/api/resetTransaction/commit',
-        'rollback_url' => 'http://127.0.0.1:8000/api/resetTransaction/rollback',
+        'commit_url' => 'http://127.0.0.1:8001/api/resetTransaction/commit',
+        'rollback_url' => 'http://127.0.0.1:8001/api/resetTransaction/rollback',
     ],
     'connections' => [
         'service_order' => [

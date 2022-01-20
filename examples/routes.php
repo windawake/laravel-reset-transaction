@@ -3,6 +3,7 @@
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Laravel\ResetTransaction\Exception\ResetTransactionException;
+use Laravel\ResetTransaction\Facades\RT;
 
 Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function () {
     Route::resource('/resetOrder', \App\Http\Controllers\ResetOrderController::class);
@@ -27,27 +28,22 @@ Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function
 });
 
 Route::prefix('api')->middleware('api')->group(function () {
-    Route::post('/resetTransaction/rollback', function () {
+    Route::post('/resetTransaction/commit', function () {
         $transactId = request('transact_id');
+        $transactRollback = request('transact_rollback', []);
         $code = 1;
-        DB::transaction(function () use ($transactId) {
-            DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
-        });
+
+        RT::centerCommit($transactId, $transactRollback);
 
         return ['code' => $code, 'transactId' => $transactId];
     });
 
-    Route::post('/resetTransaction/commit', function () {
+    Route::post('/resetTransaction/rollback', function () {
         $transactId = request('transact_id');
+        $transactRollback = request('transact_rollback', []);
         $code = 1;
-        $list = DB::table('reset_transaction')->where('transact_id', $transactId)->get();
-        DB::transaction(function () use ($list, $transactId) {
-            foreach ($list as $item) {
-                DB::unprepared($item->sql);
-            }
-
-            DB::table('reset_transaction')->where('transact_id', $transactId)->delete();
-        });
+        
+        RT::centerRollback($transactId, $transactRollback);
 
         return ['code' => $code, 'transact_id' => $transactId];
     });

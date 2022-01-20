@@ -6,12 +6,14 @@ use Illuminate\Support\Facades\Facade;
 
 /**
  * @method static string beginTransaction()
- * @method static void commit()
- * @method static void rollBack()
+ * @method static mixed commit()
+ * @method static mixed rollBack()
  * @method static void setTransactId(string $transactId)
  * @method static string getTransactId()
  * @method static void middlewareRollback()
  * @method static void middlewareBeginTransaction(string $transactId)
+ * @method static mixed centerCommit(string $transactId, array $transactRollback)
+ * @method static mixed centerRollback(string $transactId, array $transactRollback)
  * @method static void saveQuery(string $query, array $bindings, int $result, bool $checkResult, string $keyName = null, int $id = null)
  * 
  * @see \Laravel\ResetTransaction\Facades\ResetTransaction
