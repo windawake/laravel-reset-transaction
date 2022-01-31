@@ -74,7 +74,8 @@ class CreateExamples extends Command
         if ($hasTransaction == false) {
             $testsuite = $xml->testsuites->addChild('testsuite');
             $testsuite->addAttribute('name', 'Transaction');
-            $testsuite->addChild('directory', './tests/Transaction');
+            $directory = $testsuite->addChild('directory', './tests/Transaction');
+            $directory->addAttribute('suffix', 'Test.php');
 
             $domxml = new \DOMDocument('1.0');
             $domxml->preserveWhiteSpace = false;
