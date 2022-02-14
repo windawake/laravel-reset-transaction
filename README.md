@@ -158,6 +158,6 @@ class ServiceTest extends TestCase
 ## Contact
 
 
-![](https://cdn.learnku.com/uploads/images/202201/24/46914/b5WBwQmXke.png!large)
+![](https://cdn.learnku.com/uploads/images/202202/14/46914/6N90FDXvSa.png!large)
 
 Scan code into wechat group. I hope that more friends will learn from each other and study the knowledge of distributed transactions together.
