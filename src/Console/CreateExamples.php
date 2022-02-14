@@ -74,7 +74,8 @@ class CreateExamples extends Command
         if ($hasTransaction == false) {
             $testsuite = $xml->testsuites->addChild('testsuite');
             $testsuite->addAttribute('name', 'Transaction');
-            $testsuite->addChild('directory', './tests/Transaction');
+            $directory = $testsuite->addChild('directory', './tests/Transaction');
+            $directory->addAttribute('suffix', 'Test.php');
 
             $domxml = new \DOMDocument('1.0');
             $domxml->preserveWhiteSpace = false;
@@ -92,6 +93,7 @@ class CreateExamples extends Command
     private function addTableToDatabase()
     {
         $transactTable = 'reset_transact';
+        $transactSqlTable = 'reset_transact_sql';
         $transactReqTable = 'reset_transact_req';
         $orderTable = 'reset_order';
         $storageTable = 'reset_storage';
@@ -100,16 +102,20 @@ class CreateExamples extends Command
         $orderService = 'service_order';
         $storageService = 'service_storage';
         $accountService = 'service_account';
+        $rtCenter = 'rt_center';
 
         $serviceMap = [
             $orderService => [
-                $transactTable, $transactReqTable, $orderTable
+                $orderTable
             ],
             $storageService => [
-                $transactTable, $transactReqTable, $storageTable
+                $storageTable
             ],
             $accountService => [
-                $transactTable, $transactReqTable, $accountTable
+                $accountTable
+            ],
+            $rtCenter => [
+                $transactTable, $transactSqlTable, $transactReqTable,
             ]
         ];
 
@@ -117,7 +123,7 @@ class CreateExamples extends Command
         $dbList = $manager->listDatabases();
 
         foreach ($serviceMap as $service => $tableList) {
-            if (!in_array($orderService, $dbList)) {
+            if (!in_array($service, $dbList)) {
                 $manager->createDatabase($service);
             }
 
@@ -127,9 +133,23 @@ class CreateExamples extends Command
                     Schema::dropIfExists($fullTable);
                     Schema::create($fullTable, function (Blueprint $table) {
                         $table->bigIncrements('id');
+                        $table->string('transact_id', 32);
+                        $table->tinyInteger('action')->default(0);
+                        $table->text('transact_rollback');
+                        $table->dateTime('created_at')->useCurrent();
+                        $table->unique('transact_id');
+                    });
+                }
+
+                if ($table == $transactSqlTable) {
+                    $fullTable = $service . '.' . $transactSqlTable;
+                    Schema::dropIfExists($fullTable);
+                    Schema::create($fullTable, function (Blueprint $table) {
+                        $table->bigIncrements('id');
                         $table->string('request_id', 32);
                         $table->string('transact_id', 512);
                         $table->tinyInteger('transact_status')->default(0);
+                        $table->string('connection', 32);
                         $table->text('sql');
                         $table->integer('result')->default(0);
                         $table->tinyInteger('check_result')->default(0);
@@ -145,9 +165,11 @@ class CreateExamples extends Command
                     Schema::create($fullTable, function (Blueprint $table) {
                         $table->bigIncrements('id');
                         $table->string('request_id', 32);
+                        $table->string('transact_id', 32);
                         $table->text('response');
                         $table->dateTime('created_at')->useCurrent();
                         $table->unique('request_id');
+                        $table->index('transact_id');
                     });
                 }
 

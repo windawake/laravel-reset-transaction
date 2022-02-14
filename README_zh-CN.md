@@ -166,8 +166,4 @@ class ServiceTest extends TestCase
 ![](https://cdn.learnku.com/uploads/images/202202/14/46914/6N90FDXvSa.png!large)
 
 扫码进微信群。希望有更多的朋友相互学习和一起研究分布式事务的知识。
-## 相关资源
-laravel版本： https://github.com/windawake/laravel-reset-transaction
-
-hyperf版本： https://github.com/windawake/hyperf-reset-transaction
 

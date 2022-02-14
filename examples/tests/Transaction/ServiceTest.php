@@ -149,8 +149,8 @@ class ServiceTest extends TestCase
         $accountItem2 = ResetAccountModel::find(1);
 
         $this->assertTrue(($orderCount1 + 1) == $orderCount2);
-        $this->assertTrue(($storageItem1->stock_qty - $stockQty) == $storageItem2->stock_qty);
-        $this->assertTrue(($accountItem1->amount - $amount) == $accountItem2->amount);
+        $this->assertTrue($storageItem1->stock_qty - $stockQty == $storageItem2->stock_qty);
+        $this->assertTrue(abs($accountItem1->amount - $amount - $accountItem2->amount) < 0.001);
     }
 
     public function testNestedTransaction()

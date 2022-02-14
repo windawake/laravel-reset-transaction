@@ -58,10 +58,15 @@ class ResetTransactionServiceProvider extends ServiceProvider
             return $this;
         });
 
-        $configList = config('rt_database.connections', []);
+        $configList = config('rt_database.service_connections', []);
         $connections = $this->app['config']['database.connections'];
         foreach($configList as $name => $config) {
             $connections[$name] = $config;
+        }
+
+        $centerConn = config('rt_database.center.connections.rt_center');
+        if ($centerConn) {
+            $connections['rt_center'] = $centerConn;
         }
         $this->app['config']['database.connections'] = $connections;
     }

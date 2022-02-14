@@ -13,10 +13,17 @@ class ResetTransaction
 
     public function beginTransaction()
     {
-        $this->stmtBegin();
-
         $transactId = session_create_id();
         array_push($this->transactIdArr, $transactId);
+        if (count($this->transactIdArr) == 1) {
+            $data = [
+                'transact_id' => $transactId,
+                'transact_rollback' => '[]',
+            ];
+            DB::connection('rt_center')->table('reset_transact')->insert($data);
+        }
+
+        $this->stmtBegin();
 
         return $this->getTransactId();
     }
@@ -80,61 +87,64 @@ class ResetTransaction
         return $response;
     }
 
-    
+
     public function centerCommit($transactId, $transactRollback)
-    {        
-        $xidArr = $this->getUsedXidArr($transactId);
+    {
+        $item = DB::connection('rt_center')->table('reset_transact')->where('transact_id', $transactId)->first();
+        if ($item->transact_rollback) {
+            $rollArr = json_decode($item->transact_rollback, true);
+            $transactRollback = array_merge($transactRollback, $rollArr);
+        }
+        foreach ($transactRollback as $tid) {
+            DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $tid . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
+        }
+        $xidMap = $this->getUsedXidMap($transactId, 'commit');
+        $xidArr = [];
+        foreach ($xidMap as $name => $item) {
+            $xidArr[$name] = $item['xid'];
+        }
+
         $this->xaBeginTransaction($xidArr);
-        foreach ($xidArr as $name => $xid) {
-            foreach ($transactRollback as $transactId) {
-                DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
-            }
-        }
-
-        foreach ($xidArr as $name => $xid) {
-            $sqlCollects = DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $this->getTransactId() . '%')->get();
-            if ($sqlCollects->count() > 0) {
-                foreach ($sqlCollects as $item) {
-                    if ($item->transact_status != RT::STATUS_ROLLBACK) {
-                        $result = DB::connection($name)->getPdo()->exec($item->sql);
-                        if ($item->check_result && $result != $item->result) {
-                            throw new ResetTransactionException("db had been changed by anothor transact_id");
-                        }
-                    }
+        foreach ($xidMap as $name => $item) {
+            $sqlCollects = $item['sql_list'];
+            foreach ($sqlCollects as $item) {
+                $result = DB::connection($name)->getPdo()->exec($item->sql);
+                if ($item->check_result && $result != $item->result) {
+                    throw new ResetTransactionException("db had been changed by anothor transact_id");
                 }
-                DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $this->getTransactId() . '%')->delete();
             }
         }
-
         $this->xaCommit($xidArr);
+        DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $transactId . '%')->delete();
+        DB::connection('rt_center')->table('reset_transact_req')->where('transact_id', $transactId)->delete();
+        DB::connection('rt_center')->table('reset_transact')->where('transact_id', $transactId)->delete();
     }
 
     public function centerRollback($transactId, $transactRollback)
     {
-
-        $xidArr = $this->getUsedXidArr($transactId);
-        $this->xaBeginTransaction($xidArr);
-
         if (strpos('-', $transactId)) {
-            foreach ($xidArr as $name => $xid) {
-                foreach ($transactRollback as $txId) {
-                    DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $txId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
-                }
+            foreach ($transactRollback as $txId) {
+                DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $txId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
             }
+            DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like',  $transactId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
         } else {
-            foreach ($xidArr as $name => $xid) {
-                DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->delete();
-            }
+            DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $transactId . '%')->delete();
+            DB::connection('rt_center')->table('reset_transact_req')->where('transact_id', $transactId)->delete();
+            DB::connection('rt_center')->table('reset_transact')->where('transact_id', $transactId)->delete();
         }
 
-        $this->xaCommit($xidArr);
         $this->removeRT();
     }
 
-    public function middlewareBeginTransaction($transactId)
+    public function middlewareBeginTransaction($transactId, $connection)
     {
         $transactIdArr = explode('-', $transactId);
-        $sqlArr = DB::table('reset_transact')->where('transact_id', 'like', $transactIdArr[0].'%')->whereIn('transact_status', [RT::STATUS_START, RT::STATUS_COMMIT])->pluck('sql')->toArray();
+        $sqlArr = DB::connection('rt_center')
+            ->table('reset_transact_sql')
+            ->where('transact_id', 'like', $transactIdArr[0].'%')
+            ->where('connection', $connection)
+            ->whereIn('transact_status', [RT::STATUS_START, RT::STATUS_COMMIT])
+            ->pluck('sql')->toArray();
         $sql = implode(';', $sqlArr);
         $this->stmtBegin();
         if ($sqlArr) {
@@ -150,15 +160,17 @@ class ResetTransaction
         $this->logRT(RT::STATUS_COMMIT);
 
         if ($this->transactRollback) {
-            $rollbackUrl = config('rt_database.center.rollback_url');
+            $transactId = RT::getTransactId();
+            $transactIdArr = explode('-', $transactId);
+            $tid = $transactIdArr[0];
+            
+            $item = DB::connection('rt_center')->table('reset_transact')->where('transact_id', $tid)->first();
+            $arr = $item->transact_rollback ? json_decode($item->transact_rollback, true) : [];
+            $arr = array_merge($arr, $this->transactRollback);
+            $arr = array_unique($arr);
 
-            $client = new Client();
-            $client->post($rollbackUrl, [
-                'json' =>[
-                    'transact_id' => $this->getTransactId(),
-                    'transact_rollback' => $this->transactRollback,
-                ]
-            ]);
+            $data = ['transact_rollback' => json_encode($arr)];
+            DB::connection('rt_center')->table('reset_transact')->where('transact_id', $tid)->update($data);
         }
         
         $this->removeRT();
@@ -212,19 +224,25 @@ class ResetTransaction
         return $this->transactRollback;
     }
 
-    private function getUsedXidArr($transactId)
+    private function getUsedXidMap($transactId, $action)
     {
-        $conList = config('rt_database.connections', []);
-        $xidArr = [];
-        foreach ($conList as $name => $config) {
-            $count = DB::connection($name)->table('reset_transact')->where('transact_id', 'like', $transactId . '%')->count();
-            if ($count > 0) {
-                $xid = session_create_id();
-                $xidArr[$name] = $xid;
-            }
+        $xidMap = [];
+        $query = DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $transactId . '%');
+        if ($action == 'commit') {
+            $query->whereIn('transact_status', [RT::STATUS_START, RT::STATUS_COMMIT]);
+        }
+        $list = $query->get();
+        foreach ($list as $item) {
+            $name = $item->connection;
+            $xidMap[$name]['sql_list'][] = $item;
         }
 
-        return $xidArr;
+        foreach ($xidMap as $name => &$item){
+            $xid = session_create_id();
+            $item['xid'] = $xid;
+        }
+
+        return $xidMap;
     }
 
     public function logRT($status)
@@ -237,13 +255,14 @@ class ResetTransaction
         
         if ($sqlArr) {
             foreach ($sqlArr as $item) {
-                DB::table('reset_transact')->insert([
+                DB::connection('rt_center')->table('reset_transact_sql')->insert([
                     'request_id' => $requestId,
                     'transact_id' => $item['transact_id'],
                     'transact_status' => $status,
                     'sql' => value($item['sql']),
                     'result' => $item['result'],
                     'check_result' => $item['check_result'],
+                    'connection' => $item['connection'],
                 ]);
             }
         }
@@ -364,6 +383,7 @@ class ResetTransaction
                     'sql' => $backupSql, 
                     'result' => $result,
                     'check_result' => (int) $checkResult,
+                    'connection' => DB::getDefaultConnection()
                 ];
                 session()->push('rt_transact_sql', $sqlItem);
             }
