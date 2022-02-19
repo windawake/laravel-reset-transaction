@@ -112,7 +112,6 @@ class ResetAccountController extends Controller
             'headers' => [
                 'rt_request_id' => session_create_id(),
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_order'
             ]
         ]);
 
@@ -123,7 +122,6 @@ class ResetAccountController extends Controller
             'headers' => [
                 'rt_request_id' => session_create_id(),
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_storage'
             ]
         ]);
 
@@ -162,7 +160,7 @@ class ResetAccountController extends Controller
             'headers' => [
                 'rt_request_id' => session_create_id(),
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_order'
+                
             ]
         ]);
 
@@ -173,8 +171,7 @@ class ResetAccountController extends Controller
             'headers' => [
                 'rt_request_id' => session_create_id(),
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_storage'
-            ]
+                            ]
         ]);
 
         ResetAccountModel::setCheckResult(true)->where('id', 1)->where('amount', '>', $amount)->decrement('amount', $amount);

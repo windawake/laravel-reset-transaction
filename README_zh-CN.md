@@ -118,7 +118,6 @@ class ServiceTest extends TestCase
             'headers' => [
                 'rt_request_id' => $requestId,
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_storage'
             ]
         ]);
         $resArr1 = $this->responseToArray($response);
@@ -132,7 +131,6 @@ class ServiceTest extends TestCase
             'headers' => [
                 'rt_request_id' => $requestId,
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_account'
             ]
         ]);
         $resArr2 = $this->responseToArray($response);

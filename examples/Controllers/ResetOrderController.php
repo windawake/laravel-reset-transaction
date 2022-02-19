@@ -147,7 +147,7 @@ class ResetOrderController extends Controller
                 'headers' => [
                     'rt_request_id' => session_create_id(),
                     'rt_transact_id' => $transactId,
-                    'rt_connection' => 'service_order'
+                    
                 ]
             ]);
             

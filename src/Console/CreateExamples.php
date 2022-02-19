@@ -193,7 +193,7 @@ class CreateExamples extends Command
                         $table->increments('id');
                         $table->integer('stock_qty')->default(0);
                     });
-                    DB::unprepared("insert into {$fullTable} values(1, 1000)");
+                    DB::unprepared("insert into {$fullTable} values(1, 10000)");
                 }
 
                 if ($table == $accountTable) {
@@ -203,7 +203,7 @@ class CreateExamples extends Command
                         $table->increments('id');
                         $table->decimal('amount')->default(0);
                     });
-                    DB::unprepared("insert into {$fullTable} values(1, 10000)");
+                    DB::unprepared("insert into {$fullTable} values(1, 100000)");
                 }
             }
         }

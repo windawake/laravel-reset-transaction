@@ -29,7 +29,7 @@ class NetworkTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
+        
         DB::setDefaultConnection('service_order');
         $requestId = session_create_id();
         session()->put('rt_request_id', $requestId);
@@ -85,7 +85,7 @@ class NetworkTest extends TestCase
             'headers' => [
                 'rt_request_id' => $requestId,
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_order'
+                
             ],
         ]);
 
@@ -120,7 +120,7 @@ class NetworkTest extends TestCase
             'headers' => [
                 'rt_request_id' => $requestId,
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_order'
+                
             ],
         ]);
         $resArr1 = $this->responseToArray($response);
@@ -135,7 +135,7 @@ class NetworkTest extends TestCase
             'headers' => [
                 'rt_request_id' => $requestId,
                 'rt_transact_id' => $transactId,
-                'rt_connection' => 'service_order'
+                
             ]
         ]);
         $resArr2 = $this->responseToArray($response);

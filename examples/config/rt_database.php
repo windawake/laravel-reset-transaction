@@ -29,6 +29,7 @@ return [
     'service_connections' => [
         'service_order' => [
             'driver' => 'mysql',
+            'connection_name' => 'service_order',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => 'service_order',
@@ -46,6 +47,7 @@ return [
         ],
         'service_storage' => [
             'driver' => 'mysql',
+            'connection_name' => 'service_storage',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => 'service_storage',
@@ -63,6 +65,7 @@ return [
         ],
         'service_account' => [
             'driver' => 'mysql',
+            'connection_name' => 'service_account',
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => 'service_account',

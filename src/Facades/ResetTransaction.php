@@ -136,9 +136,10 @@ class ResetTransaction
         $this->removeRT();
     }
 
-    public function middlewareBeginTransaction($transactId, $connection)
+    public function middlewareBeginTransaction($transactId)
     {
         $transactIdArr = explode('-', $transactId);
+        $connection = DB::getDefaultConnection();
         $sqlArr = DB::connection('rt_center')
             ->table('reset_transact_sql')
             ->where('transact_id', 'like', $transactIdArr[0].'%')
@@ -378,12 +379,13 @@ class ResetTransaction
                     }
                 }
 
+                $connectionName = DB::connection()->getConfig('connection_name');
                 $sqlItem = [
                     'transact_id' => $rtTransactId, 
                     'sql' => $backupSql, 
                     'result' => $result,
                     'check_result' => (int) $checkResult,
-                    'connection' => DB::getDefaultConnection()
+                    'connection' => $connectionName
                 ];
                 session()->push('rt_transact_sql', $sqlItem);
             }

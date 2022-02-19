@@ -22,10 +22,6 @@ class DistributeTransact
     {
         $requestId = $request->header('rt_request_id');
         $transactId = $request->header('rt_transact_id');
-        $connection = $request->header('rt_connection');
-        if ($connection) {
-            DB::setDefaultConnection($connection);
-        }
         
         if ($transactId) {
             if (!$requestId) {
@@ -38,7 +34,7 @@ class DistributeTransact
                 return Response::json($data);
             }
 
-            RT::middlewareBeginTransaction($transactId, $connection);
+            RT::middlewareBeginTransaction($transactId);
         }
 
         $response = $next($request);
