@@ -134,8 +134,9 @@ class CreateExamples extends Command
                     Schema::create($fullTable, function (Blueprint $table) {
                         $table->bigIncrements('id');
                         $table->string('transact_id', 32);
-                        $table->tinyInteger('action')->default(0);
                         $table->text('transact_rollback');
+                        $table->tinyInteger('action')->default(0);
+                        $table->text('xids_info');
                         $table->dateTime('created_at')->useCurrent();
                         $table->unique('transact_id');
                     });
@@ -147,7 +148,8 @@ class CreateExamples extends Command
                     Schema::create($fullTable, function (Blueprint $table) {
                         $table->bigIncrements('id');
                         $table->string('request_id', 32);
-                        $table->string('transact_id', 512);
+                        $table->string('transact_id', 32);
+                        $table->string('chain_id', 512);
                         $table->tinyInteger('transact_status')->default(0);
                         $table->string('connection', 32);
                         $table->text('sql');

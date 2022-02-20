@@ -2,7 +2,6 @@
 
 return [
     'center' =>[
-        'mode' => env('RT_MODE', 'xa'), // xa, common
         'commit_url' => 'http://127.0.0.1:8001/api/resetTransaction/commit',
         'rollback_url' => 'http://127.0.0.1:8001/api/resetTransaction/rollback',
         'connections' => [
@@ -23,8 +22,11 @@ return [
                     PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
                 ]) : [],
             ],
-        ]
-        
+        ],
+        'crontab' => [
+            'clean_after' => 600,
+            'release_after' => 120,
+        ] 
     ],
     'service_connections' => [
         'service_order' => [

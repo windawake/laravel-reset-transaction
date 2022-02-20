@@ -19,6 +19,7 @@ class ResetTransaction
             $data = [
                 'transact_id' => $transactId,
                 'transact_rollback' => '[]',
+                'xids_info' => '[]',
             ];
             DB::connection('rt_center')->table('reset_transact')->insert($data);
         }
@@ -87,62 +88,13 @@ class ResetTransaction
         return $response;
     }
 
-
-    public function centerCommit($transactId, $transactRollback)
-    {
-        $item = DB::connection('rt_center')->table('reset_transact')->where('transact_id', $transactId)->first();
-        if ($item->transact_rollback) {
-            $rollArr = json_decode($item->transact_rollback, true);
-            $transactRollback = array_merge($transactRollback, $rollArr);
-        }
-        foreach ($transactRollback as $tid) {
-            DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $tid . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
-        }
-        $xidMap = $this->getUsedXidMap($transactId, 'commit');
-        $xidArr = [];
-        foreach ($xidMap as $name => $item) {
-            $xidArr[$name] = $item['xid'];
-        }
-
-        $this->xaBeginTransaction($xidArr);
-        foreach ($xidMap as $name => $item) {
-            $sqlCollects = $item['sql_list'];
-            foreach ($sqlCollects as $item) {
-                $result = DB::connection($name)->getPdo()->exec($item->sql);
-                if ($item->check_result && $result != $item->result) {
-                    throw new ResetTransactionException("db had been changed by anothor transact_id");
-                }
-            }
-        }
-        $this->xaCommit($xidArr);
-        DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $transactId . '%')->delete();
-        DB::connection('rt_center')->table('reset_transact_req')->where('transact_id', $transactId)->delete();
-        DB::connection('rt_center')->table('reset_transact')->where('transact_id', $transactId)->delete();
-    }
-
-    public function centerRollback($transactId, $transactRollback)
-    {
-        if (strpos('-', $transactId)) {
-            foreach ($transactRollback as $txId) {
-                DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $txId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
-            }
-            DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like',  $transactId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
-        } else {
-            DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $transactId . '%')->delete();
-            DB::connection('rt_center')->table('reset_transact_req')->where('transact_id', $transactId)->delete();
-            DB::connection('rt_center')->table('reset_transact')->where('transact_id', $transactId)->delete();
-        }
-
-        $this->removeRT();
-    }
-
     public function middlewareBeginTransaction($transactId)
     {
         $transactIdArr = explode('-', $transactId);
         $connection = DB::getDefaultConnection();
         $sqlArr = DB::connection('rt_center')
             ->table('reset_transact_sql')
-            ->where('transact_id', 'like', $transactIdArr[0].'%')
+            ->where('transact_id', $transactIdArr[0])
             ->where('connection', $connection)
             ->whereIn('transact_status', [RT::STATUS_START, RT::STATUS_COMMIT])
             ->pluck('sql')->toArray();
@@ -225,27 +177,6 @@ class ResetTransaction
         return $this->transactRollback;
     }
 
-    private function getUsedXidMap($transactId, $action)
-    {
-        $xidMap = [];
-        $query = DB::connection('rt_center')->table('reset_transact_sql')->where('transact_id', 'like', $transactId . '%');
-        if ($action == 'commit') {
-            $query->whereIn('transact_status', [RT::STATUS_START, RT::STATUS_COMMIT]);
-        }
-        $list = $query->get();
-        foreach ($list as $item) {
-            $name = $item->connection;
-            $xidMap[$name]['sql_list'][] = $item;
-        }
-
-        foreach ($xidMap as $name => &$item){
-            $xid = session_create_id();
-            $item['xid'] = $xid;
-        }
-
-        return $xidMap;
-    }
-
     public function logRT($status)
     {
         $sqlArr = session()->get('rt_transact_sql');
@@ -258,7 +189,8 @@ class ResetTransaction
             foreach ($sqlArr as $item) {
                 DB::connection('rt_center')->table('reset_transact_sql')->insert([
                     'request_id' => $requestId,
-                    'transact_id' => $item['transact_id'],
+                    'transact_id' => $this->transactIdArr[0],
+                    'chain_id' => $item['transact_id'],
                     'transact_status' => $status,
                     'sql' => value($item['sql']),
                     'result' => $item['result'],
@@ -275,76 +207,6 @@ class ResetTransaction
 
         session()->remove('rt_transact_sql');
         session()->remove('rt_request_id');
-    }
-
-
-    /**
-     * beginTransaction
-     *
-     */
-    public function xaBeginTransaction($xidArr)
-    {
-        $this->_XAStart($xidArr);
-    }
-
-    /**
-     * commit
-     * @param $xidArr
-     */
-    public function xaCommit($xidArr)
-    {
-        $this->_XAEnd($xidArr);
-        $this->_XAPrepare($xidArr);
-        $this->_XACommit($xidArr);
-    }
-
-    /**
-     * rollback
-     * @param $xidArr
-     */
-    public function xaRollBack($xidArr)
-    {
-        $this->_XAEnd($xidArr);
-        $this->_XAPrepare($xidArr);
-        $this->_XARollback($xidArr);
-    }
-
-    private function _XAStart($xidArr)
-    {
-        foreach ($xidArr as $name => $xid) {
-            DB::connection($name)->getPdo()->exec("XA START '{$xid}'");
-        }
-    }
-
-
-    private function _XAEnd($xidArr)
-    {
-        foreach ($xidArr as $name => $xid) {
-            DB::connection($name)->getPdo()->exec("XA END '{$xid}'");
-        }
-    }
-
-
-    private function _XAPrepare($xidArr)
-    {
-        foreach ($xidArr as $name => $xid) {
-            DB::connection($name)->getPdo()->exec("XA PREPARE '{$xid}'");
-        }
-    }
-
-
-    private function _XACommit($xidArr)
-    {
-        foreach ($xidArr as $name => $xid) {
-            DB::connection($name)->getPdo()->exec("XA COMMIT '{$xid}'");
-        }
-    }
-
-    private function _XARollback($xidArr)
-    {
-        foreach ($xidArr as $name => $xid) {
-            DB::connection($name)->getPdo()->exec("XA ROLLBACK '{$xid}'");
-        }
     }
 
     public function saveQuery($query, $bindings, $result, $checkResult, $keyName = null, $id = null)

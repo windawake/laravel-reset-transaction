@@ -4,6 +4,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Laravel\ResetTransaction\Exception\ResetTransactionException;
 use Laravel\ResetTransaction\Facades\RT;
+use Laravel\ResetTransaction\Facades\RTCenter;
 
 Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function () {
     Route::resource('/resetOrder', \App\Http\Controllers\ResetOrderController::class);
@@ -33,7 +34,7 @@ Route::prefix('api')->middleware('api')->group(function () {
         $transactRollback = request('transact_rollback', []);
         $code = 1;
 
-        RT::centerCommit($transactId, $transactRollback);
+        RTCenter::commit($transactId, $transactRollback);
 
         return ['code' => $code, 'transactId' => $transactId];
     });
@@ -43,7 +44,7 @@ Route::prefix('api')->middleware('api')->group(function () {
         $transactRollback = request('transact_rollback', []);
         $code = 1;
         
-        RT::centerRollback($transactId, $transactRollback);
+        RTCenter::rollback($transactId, $transactRollback);
 
         return ['code' => $code, 'transact_id' => $transactId];
     });

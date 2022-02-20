@@ -21,12 +21,6 @@ use Illuminate\Support\Facades\Facade;
  */
 class RT extends Facade
 {
-    const ACTION_START = 0;
-    const ACTION_END = 1;
-    const ACTION_PREPARE = 2;
-    const ACTION_COMMIT = 3;
-    const ACTION_ROLLBACK = 4;
-
     const STATUS_START = 0;
     const STATUS_COMMIT = 1;
     const STATUS_ROLLBACK = 2;

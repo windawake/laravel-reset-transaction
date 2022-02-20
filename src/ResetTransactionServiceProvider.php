@@ -7,8 +7,11 @@ use Laravel\ResetTransaction\Middleware\DistributeTransact;
 use Laravel\ResetTransaction\Console\CreateExamples;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
+use Laravel\ResetTransaction\Console\CleanRT;
+use Laravel\ResetTransaction\Console\ReleaseRT;
 use Laravel\ResetTransaction\Database\MySqlConnection;
 use Laravel\ResetTransaction\Facades\ResetTransaction;
+use Laravel\ResetTransaction\Facades\TransactionCenter;
 
 class ResetTransactionServiceProvider extends ServiceProvider
 {
@@ -37,14 +40,33 @@ class ResetTransactionServiceProvider extends ServiceProvider
                 return new CreateExamples($app['files']);
             }
         );
+        $this->app->singleton(
+            'command.resetTransact.clean-rt',
+            function ($app) {
+                return new CleanRT();
+            }
+        );
+        $this->app->singleton(
+            'command.resetTransact.release-rt',
+            function ($app) {
+                return new ReleaseRT();
+            }
+        );
+        $this->commands(
+            'command.resetTransact.create-examples',
+            'command.resetTransact.clean-rt',
+            'command.resetTransact.release-rt'
+        );
 
         $this->app->singleton('rt', function($app){
             return new ResetTransaction();
         });
 
-        $this->commands(
-            'command.resetTransact.create-examples'
-        );
+        $this->app->singleton('rt_center', function($app){
+            return new TransactionCenter();
+        });
+
+        
 
         Connection::resolverFor('mysql', function ($connection, $database, $prefix, $config) {
             // Next we can initialize the connection.
