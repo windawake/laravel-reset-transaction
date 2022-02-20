@@ -39,7 +39,6 @@ class ReleaseRT extends Command
     public function handle()
     {
         $releaseAfter = (int) config('rt_database.center.crontab.release_after');
-
         if ($releaseAfter) {
             DB::setDefaultConnection('rt_center');
             $actionArr = [
@@ -51,31 +50,42 @@ class ReleaseRT extends Command
             $createdAt = date('Y-m-d H:i:s', time() - $releaseAfter);
             $list = DB::table('reset_transact')->whereIn('action', $actionArr)->where('created_at', '<', $createdAt)->get();
 
+            $recover = $this->getXaRecover();
+
             foreach ($list as $item) {
                 $xidArr = json_decode($item->xids_info, true);
                 switch ($item->action)
                 {
                 case RTCenter::ACTION_PREPARE:
                     foreach ($xidArr as $name => $xid) {
-                        $this->tryCatch(function() use ($name, $xid) {
-                            DB::connection($name)->getPdo()->exec("xa rollback '$xid'");
-                        });
+                        $arr = $recover[$name] ?? [];
+                        if (in_array($xid, $arr)) {
+                            $this->tryCatch(function() use ($name, $xid) {
+                                DB::connection($name)->getPdo()->exec("xa rollback '$xid'");
+                            });
+                        }
                     }
                     DB::table('reset_transact')->where('transact_id', $item->transact_id)->update(['action' => RTCenter::ACTION_START]);
                     break;
                 case RTCenter::ACTION_PREPARE_COMMIT:
                     foreach ($xidArr as $name => $xid) {
-                        $this->tryCatch(function() use ($name, $xid) {
-                            DB::connection($name)->getPdo()->exec("xa commit '$xid'");
-                        });
+                        $arr = $recover[$name] ?? [];
+                        if (in_array($xid, $arr)) {
+                            $this->tryCatch(function() use ($name, $xid) {
+                                DB::connection($name)->getPdo()->exec("xa commit '$xid'");
+                            });
+                        }
                     }
                     DB::table('reset_transact')->where('transact_id', $item->transact_id)->update(['action' => RTCenter::ACTION_COMMIT]);
                     break;
                 case RTCenter::ACTION_PREPARE_ROLLBACK:
                     foreach ($xidArr as $name => $xid) {
-                        $this->tryCatch(function() use ($name, $xid) {
-                            DB::connection($name)->getPdo()->exec("xa rollback '$xid'");
-                        });
+                        $arr = $recover[$name] ?? [];
+                        if (in_array($xid, $arr)) {
+                            $this->tryCatch(function() use ($name, $xid) {
+                                DB::connection($name)->getPdo()->exec("xa rollback '$xid'");
+                            });
+                        }
                     }
                     DB::table('reset_transact')->where('transact_id', $item->transact_id)->update(['action' => RTCenter::ACTION_ROLLBACK]);
                 default:
@@ -84,6 +94,25 @@ class ReleaseRT extends Command
                 }                
             }
         }
+    }
+
+    private function getXaRecover()
+    {
+        $recover = [];
+        $configList = config('rt_database.service_connections', []);
+        foreach($configList as $name => $config) {
+            $dsn="{$config['driver']}:host={$config['host']};port={$config['port']};dbname={$config['database']}";
+            $pdo = new PDO($dsn, $config['username'], $config['password']);
+            $statement = $pdo->prepare("xa recover");
+            $statement->execute();
+            $list = $statement->fetchAll();
+            if ($list) {
+                $recover[$name] = array_column($list, 'data');
+            }
+            
+        }
+        
+        return $recover;
     }
 
     private function tryCatch( Closure $tryCallback, Closure $catchCallback = null)
