@@ -212,7 +212,8 @@ class ResetTransaction
     public function saveQuery($query, $bindings, $result, $checkResult, $keyName = null, $id = null)
     {
         $rtTransactId = $this->getTransactId();
-        if ($rtTransactId && $query && !strpos($query, 'reset_transact')) {
+        $rtSkip = session()->get('rt_skip');
+        if (!$rtSkip && $rtTransactId && $query && !strpos($query, 'reset_transact')) {
             $subString = strtolower(substr(trim($query), 0, 12));
             $actionArr = explode(' ', $subString);
             $action = $actionArr[0];
@@ -225,18 +226,42 @@ class ResetTransaction
                 if ($action == 'insert') {
                     // if only queryBuilder insert or batch insert then return false
                     if (is_null($id)) {
-                        return false;
-                    }
+                        $id = DB::connection()->getPdo()->lastInsertId();
+                        // extract variables from sql
+                        preg_match("/insert into (.+) \((.+)\) values \((.+)\)/", $backupSql, $match);
+                        $database = DB::connection()->getConfig('database');
+                        $table = $match[1];
+                        $columns = $match[2];
+                        $parameters = $match[3];
 
-                    if (!strpos($query, "`{$keyName}`")) {
+                        $backupSql = function () use ($database, $table, $columns, $parameters, $id) {
+                            $columnItem = DB::selectOne('select column_name as `column_name` from information_schema.columns where table_schema = ? and table_name = ? and column_key="PRI"', [$database, trim($table, '`')]);
+                            $keyName = $columnItem->column_name;
+
+                            if (strpos($columns, "`{$keyName}`") === false) {
+                                $columns = "`{$keyName}`, " . $columns;
+                                $lineArr = explode('(', $parameters);
+                                foreach ($lineArr as $index => $line) {
+                                    $lineArr[$index] = "'{$id}', " . $line;
+                                    $id++;
+                                }
+                                $parameters = implode('(', $lineArr);
+                            }
+
+                            return "insert into $table ($columns) values ($parameters)";
+                        };
+                    } else {
                         // extract variables from sql
                         preg_match("/insert into (.+) \((.+)\) values \((.+)\)/", $backupSql, $match);
                         $table = $match[1];
                         $columns = $match[2];
                         $parameters = $match[3];
 
-                        $columns = "`{$keyName}`, " . $columns;
-                        $parameters = "'{$id}', " . $parameters;
+                        if (strpos($columns, "`{$keyName}`") === false) {
+                            $columns = "`{$keyName}`, " . $columns;
+                            $parameters = "'{$id}', " . $parameters;
+                        }
+                        
                         $backupSql = "insert into $table ($columns) values ($parameters)";
                     }
                 }

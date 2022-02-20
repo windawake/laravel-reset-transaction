@@ -19,8 +19,10 @@ class MySqlProcessor extends Processor
      */
     public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
     {
+        session()->put('rt_skip', 1);
         $id = parent::processInsertGetId($query, $sql, $values, $sequence);
-
+        session()->remove('rt_skip');
+        
         RT::saveQuery($sql, $values, 0, 0, $sequence, $id);
 
         return $id;

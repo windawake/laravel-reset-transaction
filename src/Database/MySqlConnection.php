@@ -71,4 +71,20 @@ class MySqlConnection extends DatabaseMySqlConnection
         
         return $result;
     }
+
+    /**
+     * Execute an SQL statement and return the boolean result.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @return bool
+     */
+    public function statement($query, $bindings = [])
+    {
+        $result = parent::statement($query, $bindings);
+
+        RT::saveQuery($query, $bindings, $result, 0);
+        
+        return $result;
+    }
 }
