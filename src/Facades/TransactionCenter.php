@@ -57,10 +57,9 @@ class TransactionCenter
             foreach ($transactRollback as $txId) {
                 DB::table('reset_transact_sql')->where('transact_id', $transId)->where('chain_id', 'like', $txId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
             }
-            DB::table('reset_transact_sql')->where('transact_id', $transId)->where('chain_id', 'like',  $chainId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
+            DB::table('reset_transact_sql')->where('transact_id', $transId)->where('chain_id', 'like', $chainId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
         } else {
             DB::table('reset_transact_sql')->where('transact_id', $transactId)->update(['transact_status' => RT::STATUS_ROLLBACK]);
-            DB::table('reset_transact_req')->where('transact_id', $transactId)->delete();
             DB::table('reset_transact')->where('transact_id', $transactId)->update(['action' => RTCenter::ACTION_ROLLBACK]);
         }
     }
@@ -76,7 +75,7 @@ class TransactionCenter
             $xidMap[$name]['sql_list'][] = $item;
         }
 
-        foreach ($xidMap as $name => &$item){
+        foreach ($xidMap as $name => &$item) {
             $xid = session_create_id();
             $item['xid'] = $xid;
         }
@@ -158,5 +157,4 @@ class TransactionCenter
         }
         DB::table('reset_transact')->where('transact_id', $this->transactId)->update(['action' => RTCenter::ACTION_ROLLBACK]);
     }
-
 }

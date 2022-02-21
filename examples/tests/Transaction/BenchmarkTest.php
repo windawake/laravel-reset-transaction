@@ -34,7 +34,6 @@ class BenchmarkTest extends TestCase
         // $sql = "SHOW ENGINE INNODB STATUS";
         // $ret = $con->select($sql);
         // Log::info($ret);
-        
     }
 
     public function testDeadlock02()
@@ -125,6 +124,5 @@ class BenchmarkTest extends TestCase
         $this->assertTrue($total == 36);
         $this->assertTrue(abs($amount1 - $amount2 - $amountSum) < 0.001);
         $this->assertTrue(($stockQty1 - $stockQty2) == $stockQtySum);
-
     }
 }

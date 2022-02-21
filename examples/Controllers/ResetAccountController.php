@@ -10,7 +10,6 @@ use GuzzleHttp\Client;
 
 class ResetAccountController extends Controller
 {
-
     public function __construct()
     {
         DB::setDefaultConnection('service_account');
@@ -57,7 +56,7 @@ class ResetAccountController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * 
+     *
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)

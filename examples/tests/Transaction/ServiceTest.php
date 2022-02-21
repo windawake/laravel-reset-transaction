@@ -177,8 +177,8 @@ class ServiceTest extends TestCase
                 
             ]
         ]);
-            $txId2 = RT::beginTransaction();
-            $this->client->put('api/resetOrder/12', [
+        $txId2 = RT::beginTransaction();
+        $this->client->put('api/resetOrder/12', [
                 'json' => [
                     'order_no' => 'bbb',
                     'status' => $status,
@@ -190,8 +190,8 @@ class ServiceTest extends TestCase
                 ]
             ]);
 
-                $txId3 = RT::beginTransaction();
-                $this->client->put('api/resetOrder/13', [
+        $txId3 = RT::beginTransaction();
+        $this->client->put('api/resetOrder/13', [
                     'json' => [
                         'order_no' => 'ccc',
                         'status' => $status,
@@ -203,7 +203,7 @@ class ServiceTest extends TestCase
                     ]
                 ]);
 
-                $response = $this->client->get('api/resetOrder', [
+        $response = $this->client->get('api/resetOrder', [
                     'json' => [
                         'status' => $status,
                     ],
@@ -213,13 +213,13 @@ class ServiceTest extends TestCase
                         
                     ]
                 ]);
-                $resArr = $this->responseToArray($response);
-                // 3层事务内，有3个订单修改了状态
-                $this->assertTrue($resArr['total'] == 3);
+        $resArr = $this->responseToArray($response);
+        // 3层事务内，有3个订单修改了状态
+        $this->assertTrue($resArr['total'] == 3);
 
-                RT::commit();
+        RT::commit();
 
-            RT::rollBack();
+        RT::rollBack();
 
         RT::commit();
 

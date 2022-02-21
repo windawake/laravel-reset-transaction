@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @method static mixed commit(string $transactId, array $transactRollback)
  * @method static mixed rollback(string $transactId, array $transactRollback)
- * 
+ *
  * @see \Laravel\ResetTransaction\Facades\TransactionCenter
  *
  */

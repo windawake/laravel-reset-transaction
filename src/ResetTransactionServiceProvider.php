@@ -58,15 +58,15 @@ class ResetTransactionServiceProvider extends ServiceProvider
             'command.resetTransact.release-rt'
         );
 
-        $this->app->singleton('rt', function($app){
+        $this->app->singleton('rt', function ($app) {
             return new ResetTransaction();
         });
 
-        $this->app->singleton('rt_center', function($app){
+        $this->app->singleton('rt_center', function ($app) {
             return new TransactionCenter();
         });
 
-        
+
 
         Connection::resolverFor('mysql', function ($connection, $database, $prefix, $config) {
             // Next we can initialize the connection.
@@ -74,7 +74,7 @@ class ResetTransactionServiceProvider extends ServiceProvider
             return $connection;
         });
 
-        Builder::macro('setCheckResult', function (bool $bool){
+        Builder::macro('setCheckResult', function (bool $bool) {
             $this->getConnection()->setCheckResult($bool);
 
             return $this;
@@ -82,7 +82,7 @@ class ResetTransactionServiceProvider extends ServiceProvider
 
         $configList = config('rt_database.service_connections', []);
         $connections = $this->app['config']['database.connections'];
-        foreach($configList as $name => $config) {
+        foreach ($configList as $name => $config) {
             $connections[$name] = $config;
         }
 

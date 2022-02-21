@@ -26,7 +26,7 @@ return [
         'crontab' => [
             'clean_after' => 600,
             'release_after' => 120,
-        ] 
+        ]
     ],
     'service_connections' => [
         'service_order' => [

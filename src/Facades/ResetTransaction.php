@@ -45,7 +45,7 @@ class ResetTransaction
 
         $client = new Client();
         $response = $client->post($commitUrl, [
-            'json' =>[
+            'json' => [
                 'transact_id' => $this->getTransactId(),
                 'transact_rollback' => $this->transactRollback,
             ]
@@ -78,7 +78,7 @@ class ResetTransaction
 
         $client = new Client();
         $response = $client->post($rollbackUrl, [
-            'json' =>[
+            'json' => [
                 'transact_id' => $this->getTransactId(),
                 'transact_rollback' => $this->transactRollback,
             ]
@@ -116,7 +116,7 @@ class ResetTransaction
             $transactId = RT::getTransactId();
             $transactIdArr = explode('-', $transactId);
             $tid = $transactIdArr[0];
-            
+
             $item = DB::connection('rt_center')->table('reset_transact')->where('transact_id', $tid)->first();
             $arr = $item->transact_rollback ? json_decode($item->transact_rollback, true) : [];
             $arr = array_merge($arr, $this->transactRollback);
@@ -125,7 +125,7 @@ class ResetTransaction
             $data = ['transact_rollback' => json_encode($arr)];
             DB::connection('rt_center')->table('reset_transact')->where('transact_id', $tid)->update($data);
         }
-        
+
         $this->removeRT();
     }
 
@@ -184,7 +184,7 @@ class ResetTransaction
         if (is_null($requestId)) {
             $requestId = $this->transactIdArr[0];
         }
-        
+
         if ($sqlArr) {
             foreach ($sqlArr as $item) {
                 DB::connection('rt_center')->table('reset_transact_sql')->insert([
@@ -261,22 +261,21 @@ class ResetTransaction
                             $columns = "`{$keyName}`, " . $columns;
                             $parameters = "'{$id}', " . $parameters;
                         }
-                        
+
                         $backupSql = "insert into $table ($columns) values ($parameters)";
                     }
                 }
 
                 $connectionName = DB::connection()->getConfig('connection_name');
                 $sqlItem = [
-                    'transact_id' => $rtTransactId, 
-                    'sql' => $backupSql, 
+                    'transact_id' => $rtTransactId,
+                    'sql' => $backupSql,
                     'result' => $result,
                     'check_result' => (int) $checkResult,
                     'connection' => $connectionName
                 ];
                 session()->push('rt_transact_sql', $sqlItem);
             }
-
         }
     }
 

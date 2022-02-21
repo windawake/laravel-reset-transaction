@@ -35,7 +35,7 @@ class NetworkTest extends TestCase
         session()->put('rt_request_id', $requestId);
 
         $stack = HandlerStack::create();
-        $stack->push(Middleware::retry(function($retries, Request $request, Response $response, $exception){
+        $stack->push(Middleware::retry(function ($retries, Request $request, Response $response, $exception) {
             // 重试达到3次就报错
             if ($retries >= 3) {
                 return false;
@@ -54,7 +54,6 @@ class NetworkTest extends TestCase
             }
 
             return false;
-
         }));
 
         $this->client = new Client([
@@ -166,16 +165,16 @@ class NetworkTest extends TestCase
         $transactId = '6abtl2inkilkvus7bftjhdi8nt';
         
         $sqlCollects = DB::table('reset_transact')->where('transact_id', 'like', $transactId . '%')->get();
-            if ($sqlCollects->count() > 0) {
-                foreach ($sqlCollects as $item) {
-                    if ($item->transact_status != RT::STATUS_ROLLBACK) {
-                        $result = DB::affectingStatement($item->sql);
-                        if ($item->check_result && $result != $item->result) {
-                            var_dump("db had been changed by anothor transact_id");
-                        }
+        if ($sqlCollects->count() > 0) {
+            foreach ($sqlCollects as $item) {
+                if ($item->transact_status != RT::STATUS_ROLLBACK) {
+                    $result = DB::affectingStatement($item->sql);
+                    if ($item->check_result && $result != $item->result) {
+                        var_dump("db had been changed by anothor transact_id");
                     }
                 }
             }
+        }
 
         DB::commit();
 

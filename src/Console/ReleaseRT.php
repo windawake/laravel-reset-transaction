@@ -33,7 +33,7 @@ class ReleaseRT extends Command
 
     /**
      * Execute the console command.
-     * 
+     *
      * @return mixed
      */
     public function handle()
@@ -54,13 +54,12 @@ class ReleaseRT extends Command
 
             foreach ($list as $item) {
                 $xidArr = json_decode($item->xids_info, true);
-                switch ($item->action)
-                {
+                switch ($item->action) {
                 case RTCenter::ACTION_PREPARE:
                     foreach ($xidArr as $name => $xid) {
                         $arr = $recover[$name] ?? [];
                         if (in_array($xid, $arr)) {
-                            $this->tryCatch(function() use ($name, $xid) {
+                            $this->tryCatch(function () use ($name, $xid) {
                                 DB::connection($name)->getPdo()->exec("xa rollback '$xid'");
                             });
                         }
@@ -71,7 +70,7 @@ class ReleaseRT extends Command
                     foreach ($xidArr as $name => $xid) {
                         $arr = $recover[$name] ?? [];
                         if (in_array($xid, $arr)) {
-                            $this->tryCatch(function() use ($name, $xid) {
+                            $this->tryCatch(function () use ($name, $xid) {
                                 DB::connection($name)->getPdo()->exec("xa commit '$xid'");
                             });
                         }
@@ -82,16 +81,17 @@ class ReleaseRT extends Command
                     foreach ($xidArr as $name => $xid) {
                         $arr = $recover[$name] ?? [];
                         if (in_array($xid, $arr)) {
-                            $this->tryCatch(function() use ($name, $xid) {
+                            $this->tryCatch(function () use ($name, $xid) {
                                 DB::connection($name)->getPdo()->exec("xa rollback '$xid'");
                             });
                         }
                     }
                     DB::table('reset_transact')->where('transact_id', $item->transact_id)->update(['action' => RTCenter::ACTION_ROLLBACK]);
+                    // no break
                 default:
                     break;
 
-                }                
+                }
             }
         }
     }
@@ -100,7 +100,7 @@ class ReleaseRT extends Command
     {
         $recover = [];
         $configList = config('rt_database.service_connections', []);
-        foreach($configList as $name => $config) {
+        foreach ($configList as $name => $config) {
             $dsn="{$config['driver']}:host={$config['host']};port={$config['port']};dbname={$config['database']}";
             $pdo = new PDO($dsn, $config['username'], $config['password']);
             $statement = $pdo->prepare("xa recover");
@@ -109,13 +109,12 @@ class ReleaseRT extends Command
             if ($list) {
                 $recover[$name] = array_column($list, 'data');
             }
-            
         }
         
         return $recover;
     }
 
-    private function tryCatch( Closure $tryCallback, Closure $catchCallback = null)
+    private function tryCatch(Closure $tryCallback, Closure $catchCallback = null)
     {
         try {
             $tryCallback();

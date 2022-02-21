@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static mixed centerCommit(string $transactId, array $transactRollback)
  * @method static mixed centerRollback(string $transactId, array $transactRollback)
  * @method static void saveQuery(string $query, array $bindings, int $result, bool $checkResult, string $keyName = null, int $id = null)
- * 
+ *
  * @see \Laravel\ResetTransaction\Facades\ResetTransaction
  *
  */

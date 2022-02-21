@@ -211,12 +211,12 @@ class ResetOrderController extends Controller
         ]);
 
 
-        $item = ResetOrderModel::find(rand(1,10));
+        $item = ResetOrderModel::find(rand(1, 10));
         if ($item) {
             $item->delete();
         }
 
-        if (rand(0,1) == 0) {
+        if (rand(0, 1) == 0) {
             ResetOrderModel::where('status', $status)->update(['stock_qty' => rand(1, 5)]);
         }
 
@@ -242,12 +242,12 @@ class ResetOrderController extends Controller
         ]);
 
 
-        $item = ResetOrderModel::find(rand(1,10));
+        $item = ResetOrderModel::find(rand(1, 10));
         if ($item) {
             $item->delete();
         }
 
-        if (rand(0,1) == 0) {
+        if (rand(0, 1) == 0) {
             ResetOrderModel::where('status', $status)->update(['stock_qty' => rand(1, 5)]);
         }
 

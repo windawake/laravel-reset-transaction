@@ -61,5 +61,4 @@ class QueryTest extends TestCase
 
         RT::commitTest();
     }
-
 }

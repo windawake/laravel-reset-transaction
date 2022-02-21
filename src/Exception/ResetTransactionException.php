@@ -1,6 +1,6 @@
-<?php 
+<?php
 namespace Laravel\ResetTransaction\Exception;
 
-class ResetTransactionException extends \RuntimeException {
-
+class ResetTransactionException extends \RuntimeException
+{
 }

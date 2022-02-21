@@ -2,7 +2,6 @@
 
 namespace Laravel\ResetTransaction\Database;
 
-
 use Illuminate\Database\Query\Grammars\MySqlGrammar as Grammar;
 use Laravel\ResetTransaction\Facades\RT;
 
