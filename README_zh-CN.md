@@ -93,7 +93,7 @@ RT::commit();
 ## 个人笔记
 本人之前写了[laravel快速服务化包](https://learnku.com/articles/61638 "laravel快速服务化包")，但是它没有解决数据一致性的问题。尝试用XA，但是XA只能解决跨数据但是不能解决跨服务的问题。然后我又尝试去研究tcc和seata，难学而且难用，没办法了只能自创分布式事务解决方案。一直以来，我一直以为单单只用mysql是没法解决分布式事务的问题，现在终于明白，还是有办法滴！
 
-![](https://cdn.learnku.com/uploads/images/202202/21/46914/ZfPsYrp73u.jpg!large)
+![](https://cdn.learnku.com/uploads/images/202202/25/46914/heg3sLvwiG.jpg!large)
 
 希望有更多的朋友相互学习和一起研究分布式事务的知识。
 ## 相关资源
