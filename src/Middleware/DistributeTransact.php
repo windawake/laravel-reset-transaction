@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Response;
-use Laravel\ResetTransaction\Exception\ResetTransactionException;
+use Laravel\ResetTransaction\Exception\RtException;
 use Laravel\ResetTransaction\Facades\RT;
 
 class DistributeTransact
@@ -25,7 +25,7 @@ class DistributeTransact
         
         if ($transactId) {
             if (!$requestId) {
-                throw new ResetTransactionException('rt_request_id cannot be null');
+                throw new RtException('rt_request_id cannot be null');
             }
             session()->put('rt_request_id', $requestId);
             $item = DB::connection('rt_center')->table('reset_transact_req')->where('request_id', $requestId)->first();

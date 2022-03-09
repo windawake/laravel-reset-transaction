@@ -4,6 +4,7 @@ namespace Laravel\ResetTransaction;
 
 use Illuminate\Support\ServiceProvider;
 use Laravel\ResetTransaction\Middleware\DistributeTransact;
+use Laravel\ResetTransaction\Middleware\DistributeCenter;
 use Laravel\ResetTransaction\Console\CreateExamples;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
@@ -33,6 +34,7 @@ class ResetTransactionServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app['router']->aliasMiddleware('distribute.transact', DistributeTransact::class);
+        $this->app['router']->aliasMiddleware('distribute.center', DistributeCenter::class);
 
         $this->app->singleton(
             'command.resetTransact.create-examples',

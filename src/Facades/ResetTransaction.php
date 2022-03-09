@@ -4,7 +4,6 @@ namespace Laravel\ResetTransaction\Facades;
 
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\DB;
-use Laravel\ResetTransaction\Exception\ResetTransactionException;
 
 class ResetTransaction
 {

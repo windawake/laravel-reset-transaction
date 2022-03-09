@@ -3,7 +3,7 @@
 namespace Laravel\ResetTransaction\Facades;
 
 use Illuminate\Support\Facades\DB;
-use Laravel\ResetTransaction\Exception\ResetTransactionException;
+use Laravel\ResetTransaction\Exception\RtException;
 use Laravel\ResetTransaction\Facades\RTCenter;
 
 class TransactionCenter
@@ -15,11 +15,18 @@ class TransactionCenter
         DB::setDefaultConnection('rt_center');
     }
 
-    public function commit($transactId, $transactRollback)
+    public function commit(string $transactId, array $transactRollback)
     {
-        $this->transactId = $transactId;
-
         $item = DB::table('reset_transact')->where('transact_id', $transactId)->first();
+        if (!$item) {
+            throw new RtException("transact_id not found");
+        }
+
+        if ($item->action != RTCenter::ACTION_START) {
+            throw new RtException("transact_id has been processed");
+        }
+
+        $this->transactId = $transactId;
         if ($item->transact_rollback) {
             $rollArr = json_decode($item->transact_rollback, true);
             $transactRollback = array_merge($transactRollback, $rollArr);
@@ -28,6 +35,8 @@ class TransactionCenter
             DB::table('reset_transact_sql')->where('transact_id', $transactId)->where('chain_id', 'like', $tid . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
         }
         $xidMap = $this->getXidMap($transactId);
+        if ($xidMap) {
+        }
         $xidArr = [];
         foreach ($xidMap as $name => $item) {
             $xidArr[$name] = $item['xid'];
@@ -39,29 +48,37 @@ class TransactionCenter
             foreach ($sqlCollects as $item) {
                 $result = DB::connection($name)->getPdo()->exec($item->sql);
                 if ($item->check_result && $result != $item->result) {
-                    throw new ResetTransactionException("db had been changed by anothor transact_id");
+                    throw new RtException("db had been changed by anothor transact_id");
                 }
             }
         }
         $this->xaCommit($xidArr);
+
+        return $this->result();
     }
 
-    public function rollback($transactId, $transactRollback)
+    public function rollback(string $transactId, array $transactRollback)
     {
-        $this->transactId = $transactId;
+        $item = DB::table('reset_transact')->where('transact_id', $transactId)->first();
+        if (!$item) {
+            throw new RtException("transact_id not found");
+        }
 
+        $this->transactId = $transactId;
         if (strpos('-', $transactId)) {
             $chainId = $transactId;
             $transId = explode('-', $transactId)[0];
+            array_push($transactRollback, $chainId);
 
             foreach ($transactRollback as $txId) {
                 DB::table('reset_transact_sql')->where('transact_id', $transId)->where('chain_id', 'like', $txId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
             }
-            DB::table('reset_transact_sql')->where('transact_id', $transId)->where('chain_id', 'like', $chainId . '%')->update(['transact_status' => RT::STATUS_ROLLBACK]);
         } else {
             DB::table('reset_transact_sql')->where('transact_id', $transactId)->update(['transact_status' => RT::STATUS_ROLLBACK]);
             DB::table('reset_transact')->where('transact_id', $transactId)->update(['action' => RTCenter::ACTION_ROLLBACK]);
         }
+
+        return $this->result();
     }
 
     private function getXidMap($transactId)
@@ -139,7 +156,6 @@ class TransactionCenter
         }
     }
 
-
     private function _XACommit($xidArr)
     {
         DB::table('reset_transact')->where('transact_id', $this->transactId)->update(['action' => RTCenter::ACTION_PREPARE_COMMIT]);
@@ -156,5 +172,10 @@ class TransactionCenter
             DB::connection($name)->getPdo()->exec("XA ROLLBACK '{$xid}'");
         }
         DB::table('reset_transact')->where('transact_id', $this->transactId)->update(['action' => RTCenter::ACTION_ROLLBACK]);
+    }
+
+    private function result()
+    {
+        return ['error_code' => 0, 'message' => 'done success', 'errors' => []];
     }
 }

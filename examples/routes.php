@@ -1,9 +1,8 @@
 <?php
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
-use Laravel\ResetTransaction\Exception\ResetTransactionException;
-use Laravel\ResetTransaction\Facades\RT;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Laravel\ResetTransaction\ExceptionCode;
 use Laravel\ResetTransaction\Facades\RTCenter;
 
 Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function () {
@@ -28,24 +27,48 @@ Route::prefix('api')->middleware(['api', 'distribute.transact'])->group(function
     Route::get('/resetOrderTest/disorderWithRt', [\App\Http\Controllers\ResetOrderController::class, 'disorderWithRt']);
 });
 
-Route::prefix('api')->middleware('api')->group(function () {
-    Route::post('/resetTransaction/commit', function () {
+Route::prefix('api')->middleware(['api', 'distribute.center'])->group(function () {
+    Route::post('/resetTransaction/commit', function (Request $request) {
+        $validator = Validator::make($request->all(), [
+            'transact_id' => ['required'],
+            'transact_rollback' => ['array'],
+        ]);
+
+        if ($validator->fails()) {
+            return [
+                'error_code' => ExceptionCode::ERROR_VALIDATION,
+                'message' => 'validate fail',
+                'errors' => $validator->errors()->toArray(),
+            ];
+        }
+
         $transactId = request('transact_id');
         $transactRollback = request('transact_rollback', []);
-        $code = 1;
 
-        RTCenter::commit($transactId, $transactRollback);
+        $ret = RTCenter::commit($transactId, $transactRollback);
 
-        return ['code' => $code, 'transactId' => $transactId];
+        return $ret;
     });
 
-    Route::post('/resetTransaction/rollback', function () {
+    Route::post('/resetTransaction/rollback', function (Request $request) {
+        $validator = Validator::make($request->all(), [
+            'transact_id' => ['required'],
+            'transact_rollback' => ['array'],
+        ]);
+
+        if ($validator->fails()) {
+            return [
+                'error_code' => ExceptionCode::ERROR_VALIDATION,
+                'message' => 'validate fail',
+                'errors' => $validator->errors()->toArray(),
+            ];
+        }
+
         $transactId = request('transact_id');
         $transactRollback = request('transact_rollback', []);
-        $code = 1;
-        
-        RTCenter::rollback($transactId, $transactRollback);
 
-        return ['code' => $code, 'transact_id' => $transactId];
+        $ret = RTCenter::rollback($transactId, $transactRollback);
+
+        return $ret;
     });
 });
